@@ -1,0 +1,48 @@
+.
+├── .env
+├── .gitignore
+├── .gradio
+│   └── flagged
+│       └── dataset1.csv
+├── LICENSE
+├── README.md
+├── app
+│   └── gradio_ui.py
+├── data
+│   └── sample_expense.csv
+├── expense_manager
+│   ├── __init__.py
+│   ├── chains
+│   │   ├── __init__.py
+│   │   └── expense_chain.py
+│   ├── config.py
+│   ├── utils
+│   │   ├── __init__.py
+│   │   └── csv_loader.py
+│   └── vector_store
+│       ├── __init__.py
+│       ├── document_loader.py
+│       ├── embedder.py
+│       ├── retriever_chain.py
+│       └── vector_db.py
+├── folder_structure.txt
+├── langgraph_app
+│   ├── __init__.py
+│   ├── graph.py
+│   └── nodes
+│       ├── rewrite_agent_node.py
+│       └── tool_executor_node.py
+├── main.py
+├── notebooks
+│   ├── eda.ipynb
+│   └── vector_store.ipynb
+├── requirements.txt
+├── scripts
+│   └── generate_sample_csv.py
+├── test_tool_runner.py
+├── tools
+│   └── query_dataframe_tool.py
+└── vector_store
+    └── faiss_index
+
+15 directories, 30 files
