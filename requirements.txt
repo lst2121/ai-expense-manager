@@ -11,6 +11,7 @@ langchain-core            # Core interfaces (usually included with langchain)
 langchain-openai          # Needed as base for DeepSeek integration
 langchain-deepseek        # Latest LangChain integration with DeepSeek
 langchain-huggingface
+langgraph
 sentence-transformers
 faiss-cpu
 

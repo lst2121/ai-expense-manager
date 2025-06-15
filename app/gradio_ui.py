@@ -18,25 +18,25 @@ def try_load_existing_vector_db():
     try:
         vdb = VectorDB(persist_path=persist_path)
         if not os.path.exists(persist_path):
-            return None, "❌ No vector store found. Please upload CSV."
+            return None, None, None
 
         vdb.load()
         llm = create_expense_chain().llm
         retriever = vdb.get_vectorstore()
         retriever_chain = create_retriever_chain(llm=llm, retriever=retriever)
 
-        return "✅ Loaded default data from existing vector store."
+        return None, None, "✅ Loaded default data from existing vector store."
 
     except Exception as e:
         print("Failed to auto-load vector store:", e)
-        return "❌ Failed to auto-load vector store. Please upload CSV."
+        return None, None, "❌ Failed to auto-load vector store. Please upload CSV."
 
 # Step 1: Define function to handle file upload
 def handle_file_upload(file_obj):
     global retriever_chain
 
     if not file_obj:
-        return "❌ Please upload a valid CSV file."
+        return "❌ Please upload a valid CSV file.", "", gr.update(visible=False)
 
     try:
         df = load_and_prepare_csv(file_obj.name)
@@ -48,10 +48,10 @@ def handle_file_upload(file_obj):
         retriever = vdb.get_vectorstore()
         retriever_chain = create_retriever_chain(llm=llm, retriever=retriever)
 
-        return "✅ File uploaded and processed. Ask your question below."
+        return "✅ File uploaded and processed. Ask your question below.", "", gr.update(visible=True)
 
     except Exception as e:
-        return f"❌ Failed to process file: {str(e)}"
+        return f"❌ Failed to process file: {str(e)}", "", gr.update(visible=False)
 
 # Step 2: Answer user questions
 def answer_question(query):
@@ -83,7 +83,7 @@ with gr.Blocks() as ui:
     sources_output = gr.Textbox(label="Source Documents", lines=6)
 
     upload_btn.click(fn=handle_file_upload, inputs=[file_input], 
-                     outputs=[status])
+                     outputs=[status, answer_output, question_input])
 
     # Trigger Q&A via both Enter and button click
     question_input.submit(fn=answer_question, inputs=question_input, 
@@ -92,9 +92,9 @@ with gr.Blocks() as ui:
                        outputs=[answer_output, sources_output])
 
     # Try to load default data from persisted vector DB
-    default_status = try_load_existing_vector_db()
-    status.value = default_status
-    if "✅" in default_status:
+    _, _, default_status = try_load_existing_vector_db()
+    if default_status:
+        status.value = default_status
         question_input.visible = True
 
 # Step 4: Run app
