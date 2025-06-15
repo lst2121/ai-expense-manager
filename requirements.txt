@@ -10,6 +10,9 @@ langchain-community       # Required for some wrappers & tools
 langchain-core            # Core interfaces (usually included with langchain)
 langchain-openai          # Needed as base for DeepSeek integration
 langchain-deepseek        # Latest LangChain integration with DeepSeek
+langchain-huggingface
+sentence-transformers
+faiss-cpu
 
 # Optional (for CLI testing or tracing)
 tqdm                      # For progress bars (optional but nice)
