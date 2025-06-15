@@ -1,0 +1,19 @@
+# Core language tools
+python-dotenv             # For reading API keys from .env
+
+# Data handling
+pandas                    # For reading and analyzing CSV files
+
+# LLM integration
+langchain                 # Framework for working with LLMs
+langchain-community       # Required for some wrappers & tools
+langchain-core            # Core interfaces (usually included with langchain)
+langchain-openai          # Needed as base for DeepSeek integration
+langchain-deepseek        # Latest LangChain integration with DeepSeek
+
+# Optional (for CLI testing or tracing)
+tqdm                      # For progress bars (optional but nice)
+tabulate                  # Pretty prints data in console
+
+# Phase 2: UI
+gradio                    # Lightweight web UI for app (to be used later)
