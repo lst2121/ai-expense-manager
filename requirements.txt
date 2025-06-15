@@ -20,3 +20,5 @@ tabulate                  # Pretty prints data in console
 
 # Phase 2: UI
 gradio                    # Lightweight web UI for app (to be used later)
+matplotlib
+plotly
