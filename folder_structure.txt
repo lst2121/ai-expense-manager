@@ -6,8 +6,10 @@
 │       └── dataset1.csv
 ├── LICENSE
 ├── README.md
+├── README_AI_Expense_Assistant.md
 ├── app
-│   └── gradio_ui.py
+│   ├── gradio_ui.py
+│   └── gradio_ui_rag.py
 ├── data
 │   └── sample_expense.csv
 ├── expense_manager
@@ -30,25 +32,33 @@
 │   ├── __init__.py
 │   ├── graph.py
 │   └── nodes
+│       ├── retrieve_memory_node.py
 │       ├── rewrite_agent_node.py
 │       └── tool_executor_node.py
 ├── main.py
 ├── notebooks
 │   ├── eda.ipynb
+│   ├── expense_graph_viz.pdf
+│   ├── expense_graph_viz.png
+│   ├── graph_visualization.ipynb
 │   └── vector_store.ipynb
 ├── requirements.txt
 ├── scripts
 │   └── generate_sample_csv.py
+├── test_langgraph_chart_runner.py
 ├── test_langgraph_runner.py
 ├── test_tool_runner.py
 ├── tools
+│   ├── compare_months_tool.py
+│   ├── date_range_expense_tool.py
 │   ├── fallback_tool.py
 │   ├── monthly_expenses_tool.py
 │   ├── query_dataframe_tool.py
 │   ├── sum_category_expenses_tool.py
+│   ├── summarize_memory_tool.py
 │   ├── top_expenses_tool.py
 │   └── utils.py
 └── vector_store
     └── faiss_index
 
-15 directories, 36 files
+15 directories, 46 files
