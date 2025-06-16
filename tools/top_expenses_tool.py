@@ -1,4 +1,5 @@
-from typing import Optional, TypedDict
+from typing import Optional
+from typing_extensions import TypedDict
 import pandas as pd
 from langchain_core.tools import tool
 from tools.utils import fuzzy_match_category, parse_month_string
