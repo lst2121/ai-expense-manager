@@ -24,21 +24,36 @@ def handle_file_upload(file_obj) -> tuple[dict, gr.Dataframe]:
     return {"df": df, "memory": []}, gr.Dataframe(value=df)
 
 ### 🤖 Main Assistant Logic ###
-def run_expense_assistant(query, state: dict) -> tuple[str, str, dict]:
+def run_expense_assistant(query, state: dict) -> tuple[str, str, dict, str]:
     df = state.get("df", pd.DataFrame())
     memory = state.get("memory", [])
 
     result = expense_analysis_app.invoke({"query": query, "df": df})
-
     answer = result.get("result", result.get("answer", "Sorry, I couldn’t understand."))
 
     memory.append({"query": query, "answer": answer})
     memory_md = generate_memory_markdown(memory)
 
-    return answer, memory_md, {"df": df, "memory": memory}
+    # Clear the query after submission
+    return answer, memory_md, {"df": df, "memory": memory}, ""
 
 ### 🚀 UI Setup ###
-with gr.Blocks(css=".suggestion-button {font-size: 0.85rem !important;}") as demo:
+with gr.Blocks(
+    css="""
+    .suggestion-button {
+        font-size: 0.85rem !important;
+    }
+    #memory-box {
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+        border-radius: 8px;
+        background-color: #f8f8f8;
+    }
+    """
+) as demo:
+
     state = gr.State({"df": pd.DataFrame(), "memory": []})
 
     gr.Markdown("## 💸 AI Expense Assistant")
@@ -47,8 +62,10 @@ with gr.Blocks(css=".suggestion-button {font-size: 0.85rem !important;}") as dem
         query = gr.Textbox(label="Ask a question", placeholder="e.g. my spendings on groceries in May?")
         submit_btn = gr.Button("🔍 Analyze")
 
-    output = gr.Textbox(label="📢 Assistant Response")
-    output_memory = gr.Markdown()
+    with gr.Row():
+        output = gr.Textbox(label="📢 Assistant Response")
+        output_memory = gr.Markdown(elem_id="memory-box")
+
 
     ### 📁 File Upload ###
     file_input = gr.File(label="📁 Upload Expense CSV", file_types=[".csv"])
@@ -58,14 +75,18 @@ with gr.Blocks(css=".suggestion-button {font-size: 0.85rem !important;}") as dem
     submit_btn.click(
         fn=run_expense_assistant,
         inputs=[query, state],
-        outputs=[output, output_memory, state]
+        outputs=[output, output_memory, state, query],
+        show_progress=True,
+        scroll_to_output=True
     )
 
     # ✅ Also trigger on Enter key
     query.submit(
         fn=run_expense_assistant,
         inputs=[query, state],
-        outputs=[output, output_memory, state]
+        outputs=[output, output_memory, state, query],
+        show_progress=True,
+        scroll_to_output=True
     )
 
     ### 🧠 Auto-suggested Questions ###
@@ -75,14 +96,18 @@ with gr.Blocks(css=".suggestion-button {font-size: 0.85rem !important;}") as dem
         # "Show average spending by category",
         # "Which month had highest grocery expense?"
         "How much did I spend in June?",
-        "Summarize my past spending",
+        # "Summarize my past spending",
+        "And in April?",
+        "What about subscriptions?"
     ]
 
     for q in suggestions:
         gr.Button(q, elem_classes="suggestion-button").click(
             fn=lambda state, q=q: run_expense_assistant(q, state),
             inputs=[state],
-            outputs=[output, output_memory, state]
+            outputs=[output, output_memory, state, query],
+            show_progress=True,
+            scroll_to_output=True
         )
 
 demo.launch()
