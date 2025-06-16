@@ -43,11 +43,11 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     tool_name = tool_input.get("tool_name")
     arguments = tool_input.get("arguments", {})
 
-    # ✅ Inject df for all tools except memory-only ones
+    # ✅ Inject df for all tools except summarize
     if tool_name != "summarize_memory_tool":
         arguments["df"] = state.get("df")
 
-    # ✅ Inject memory only for summarize tool
+    # ✅ Inject memory if needed
     if tool_name == "summarize_memory_tool":
         arguments["memory"] = state.get("memory", [])
 
@@ -64,7 +64,10 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         tool = TOOL_REGISTRY[tool_name]
         result = tool.invoke(arguments)
 
-        # ✅ Clean memory entry, excluding df/memory
+        # ✅ If tool returns dict with text, extract it
+        text_result = result.get("text", result) if isinstance(result, dict) else result
+
+        # ✅ Clean memory
         memory_entry = {
             "query": state["query"],
             "tool_name": tool_name,
@@ -72,7 +75,7 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 k: v for k, v in arguments.items()
                 if k not in ["df", "memory"]
             },
-            "result": result
+            "result": text_result
         }
 
         memory = state.get("memory", [])
@@ -80,10 +83,11 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
         return {
             **state,
-            "result": result,
+            "result": text_result,
             "invoked_tool": tool_name,
             "memory": memory,
         }
+
     except Exception as e:
         return {
             **state,

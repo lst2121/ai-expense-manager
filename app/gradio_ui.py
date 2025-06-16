@@ -1,102 +1,57 @@
-# app/gradio_ui.py
-
 import gradio as gr
-import os
+import pandas as pd
+from langgraph_app.graph import expense_analysis_app
 
-from expense_manager.vector_store.vector_db import VectorDB
-from expense_manager.chains.expense_chain import create_expense_chain
-from expense_manager.vector_store.retriever_chain import create_retriever_chain
-from expense_manager.utils.csv_loader import load_and_prepare_csv
+# Sample DataFrame
+data = {
+    "Date": ["2025-06-20", "2025-06-15", "2025-06-10", "2025-06-04", "2025-05-22", "2025-05-10"],
+    "Category": ["Rent", "Groceries", "Shopping", "Subscriptions", "Shopping", "Groceries"],
+    "Amount": [2300, 750.25, 1450, 485.52, 1200, 670],
+    "Notes": ["Monthly Rent", "Big Bazaar", "Flipkart", "Netflix", "Amazon", "Local Store"]
+}
+df = pd.DataFrame(data)
 
-# Global objects
-retriever_chain = None
+# --- Run Pipeline ---
+def run_pipeline(query, memory):
+    inputs = {
+        "query": query,
+        "df": df,
+        "memory": memory
+    }
+    output = expense_analysis_app.invoke(inputs)
 
-# Step 0: Try to load existing vector DB
-persist_path = "vector_store/faiss_index"
-def try_load_existing_vector_db():
-    global retriever_chain
-    try:
-        vdb = VectorDB(persist_path=persist_path)
-        if not os.path.exists(persist_path):
-            return None, None, None
+    updated_memory = output.get("memory", memory)
+    result = output.get("result", {})
+    text = result.get("text") if isinstance(result, dict) else str(result)
 
-        vdb.load()
-        llm = create_expense_chain().llm
-        retriever = vdb.get_vectorstore()
-        retriever_chain = create_retriever_chain(llm=llm, retriever=retriever)
+    # Format chat-like Markdown
+    chat_md = ""
+    for entry in updated_memory:
+        user_q = entry.get("query", "")
+        assistant_r = entry.get("result", "")
+        assistant_r = assistant_r.get("text") if isinstance(assistant_r, dict) else assistant_r
 
-        return None, None, "✅ Loaded default data from existing vector store."
+        chat_md += f"**🟢 You:**\n{user_q.strip()}\n\n"
+        chat_md += f"**🤖 Assistant:**\n> {assistant_r.strip()}\n\n---\n"
 
-    except Exception as e:
-        print("Failed to auto-load vector store:", e)
-        return None, None, "❌ Failed to auto-load vector store. Please upload CSV."
+    return text, updated_memory, chat_md
 
-# Step 1: Define function to handle file upload
-def handle_file_upload(file_obj):
-    global retriever_chain
-
-    if not file_obj:
-        return "❌ Please upload a valid CSV file.", "", gr.update(visible=False)
-
-    try:
-        df = load_and_prepare_csv(file_obj.name)
-        vdb = VectorDB(persist_path=persist_path)
-        vdb.create_from_dataframe(df)
-        vdb.load()
-
-        llm = create_expense_chain().llm
-        retriever = vdb.get_vectorstore()
-        retriever_chain = create_retriever_chain(llm=llm, retriever=retriever)
-
-        return "✅ File uploaded and processed. Ask your question below.", "", gr.update(visible=True)
-
-    except Exception as e:
-        return f"❌ Failed to process file: {str(e)}", "", gr.update(visible=False)
-
-# Step 2: Answer user questions
-def answer_question(query):
-    if retriever_chain is None:
-        return "❌ Please upload a CSV file first.", ""
-
-    try:
-        result = retriever_chain(query)
-        answer = result.get('result', "No answer found.")
-        sources = "\n\n".join([doc.page_content for doc in result.get("source_documents", [])])
-        return answer, sources if sources else "No source documents found."
-
-    except Exception as e:
-        return f"❌ Error: {str(e)}", ""
-
-# Step 3: Gradio UI layout
-with gr.Blocks() as ui:
-    gr.Markdown("## 💸 AI Expense Assistant\nUpload your expense CSV file and ask questions about it!")
-
+# --- Gradio UI ---
+with gr.Blocks() as demo:
+    gr.Markdown("## 💬 AI Expense Assistant (Chat Style)")
+    
     with gr.Row():
-        file_input = gr.File(label="📄 Upload your CSV file", file_types=[".csv"])
-        upload_btn = gr.Button("📤 Upload and Process")
+        query = gr.Textbox(label="Type your question", placeholder="e.g. Compare May and June spending", scale=5)
+        submit = gr.Button("Submit", scale=1)
 
-    status = gr.Textbox(label="Status", interactive=False)
+    output_box = gr.Textbox(label="Latest Assistant Reply", lines=4)
+    chat_log = gr.Markdown(label="🕘 Chat History")
 
-    question_input = gr.Textbox(label="Enter your question", placeholder="e.g., What were my top 3 expenses?", visible=False)
-    question_btn = gr.Button("Ask")
-    answer_output = gr.Textbox(label="Answer")
-    sources_output = gr.Textbox(label="Source Documents", lines=6)
+    memory_state = gr.State([])
 
-    upload_btn.click(fn=handle_file_upload, inputs=[file_input], 
-                     outputs=[status, answer_output, question_input])
+    # Submit via Enter
+    query.submit(fn=run_pipeline, inputs=[query, memory_state], outputs=[output_box, memory_state, chat_log])
+    # Submit via Button
+    submit.click(fn=run_pipeline, inputs=[query, memory_state], outputs=[output_box, memory_state, chat_log])
 
-    # Trigger Q&A via both Enter and button click
-    question_input.submit(fn=answer_question, inputs=question_input, 
-                          outputs=[answer_output, sources_output])
-    question_btn.click(fn=answer_question, inputs=question_input, 
-                       outputs=[answer_output, sources_output])
-
-    # Try to load default data from persisted vector DB
-    _, _, default_status = try_load_existing_vector_db()
-    if default_status:
-        status.value = default_status
-        question_input.visible = True
-
-# Step 4: Run app
-if __name__ == "__main__":
-    ui.launch()
+demo.launch()

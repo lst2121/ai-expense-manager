@@ -6,6 +6,7 @@ import pandas as pd
 from langgraph.graph import StateGraph, END
 from langgraph_app.nodes.rewrite_agent_node import rewrite_agent_node
 from langgraph_app.nodes.tool_executor_node import tool_executor_node
+from langgraph_app.nodes.retrieve_memory_node import retrieve_memory_node
 
 
 class ExpenseAgentState(TypedDict):
@@ -23,11 +24,14 @@ graph = StateGraph(ExpenseAgentState)
 # Add your nodes
 graph.add_node("rewrite_query", rewrite_agent_node)
 graph.add_node("execute_tool", tool_executor_node)
+graph.add_node("retrieve_memory", retrieve_memory_node)
 
 # Set entry and flow
 graph.set_entry_point("rewrite_query")
-graph.add_edge("rewrite_query", "execute_tool")
+graph.add_edge("rewrite_query", "retrieve_memory")
+graph.add_edge("retrieve_memory", "execute_tool")
 graph.add_edge("execute_tool", END)
+
 
 # Compile the app
 expense_analysis_app = graph.compile()
