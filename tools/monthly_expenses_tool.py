@@ -39,6 +39,8 @@ def monthly_expenses_tool(
         parsed = parse_month_string(month)
         if not parsed:
             return f"⚠️ Could not parse month from '{month}'"
+         # Ensure 'Date' column is string type
+        filtered["Date"] = filtered["Date"].astype(str)
         filtered = filtered[filtered["Date"].str.startswith(parsed)]
 
         # --- Category Filter ---
