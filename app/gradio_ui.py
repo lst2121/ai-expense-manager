@@ -1,8 +1,9 @@
 import gradio as gr
 import pandas as pd
 from langgraph_app.graph import expense_analysis_app
+from expense_manager.utils.csv_loader import load_and_prepare_csv  # ✅ Custom loader
 
-# ✅ Clean state init
+# ✅ Default state initialization
 def init_state():
     data = {
         "Date": ["2025-06-20", "2025-06-15", "2025-06-10", "2025-06-04", "2025-05-22", "2025-05-10"],
@@ -23,7 +24,12 @@ def run_expense_assistant(query, state):
     result = expense_analysis_app.invoke(state)
     return result["result"], result
 
-# 🚀 Auto-suggestions
+# 📁 File upload logic
+def handle_file_upload(file_path):
+    df = load_and_prepare_csv(file_path)
+    return {"df": df, "memory": []}, gr.update(value=df)
+
+# 🔘 Suggestions
 suggestions = [
     "Compare May and June spending",
     "How much did I spend on groceries in May?",
@@ -31,24 +37,21 @@ suggestions = [
     "Summarize my past spending",
 ]
 
-# 🧼 UI Setup
+# 🧼 Gradio UI
 with gr.Blocks(theme=gr.themes.Soft(), css="""
-body {
-    background-color: #fff;
-    font-family: 'Segoe UI', sans-serif;
-}
-.markdown-box {
-    min-height: 180px;
-    border-radius: 12px;
-    padding: 1rem;
-    background-color: #f8f9fa;
-    border: 1px solid #ddd;
-}
 .suggestion-button button {
     background-color: #e3f2fd;
     color: #1e88e5;
     margin: 4px;
     border-radius: 10px;
+    font-size: 0.8rem;
+}
+.markdown-box {
+    min-height: 180px;
+    padding: 1rem;
+    border-radius: 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
 }
 """) as demo:
 
@@ -56,11 +59,22 @@ body {
 
     state = gr.State(init_state())
 
+    # 📁 CSV Upload + Preview
+    file_upload = gr.File(label="📁 Upload CSV", type="filepath")
+    data_preview = gr.Dataframe(label="📊 Uploaded Data", interactive=False)
+
+    file_upload.change(
+        fn=handle_file_upload,
+        inputs=file_upload,
+        outputs=[state, data_preview]
+    )
+
+    # 💬 Input + Output
     query = gr.Textbox(placeholder="Ask a question...", show_label=False)
     output = gr.Markdown(elem_classes="markdown-box")
     submit = gr.Button("Submit")
 
-    # 🔘 Auto-suggestion buttons
+    # 🔘 Suggested Questions
     with gr.Row():
         for q in suggestions:
             gr.Button(q, elem_classes="suggestion-button") \
@@ -69,7 +83,7 @@ body {
     submit.click(fn=run_expense_assistant, inputs=[query, state], outputs=[output, state])
     query.submit(fn=run_expense_assistant, inputs=[query, state], outputs=[output, state])
 
-    demo.load(lambda: ("", init_state()), outputs=[output, state])
+    demo.load(lambda: ("", init_state(), init_state()["df"]), outputs=[output, state, data_preview])
 
 if __name__ == "__main__":
     demo.launch()
