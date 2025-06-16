@@ -22,23 +22,26 @@ sample_df = pd.DataFrame(data)
 
 # Test prompts
 queries = [
-    # "Show me rent expenses in June 2025",
-    # "Breakdown of shopping expenses in May 2025",
-    # "How much did I spend in June 2025?",
-    "How much did I spend last month?",
-    "How much did I spend on Rent?",
-    "How much I spend on Groceries last month?",
-    "how much did I spend between 2025-05-01 and 2025-06-10 on subscription",
+    "Compare May and June spending",
+    "Compare shopping between May and June",
+    "How much did I spend on groceries in May?",
+    "How much did I spend in June?",
+    "Summarize my past spending"
 ]
 
 print("\n🔎 LangGraph Expense Analysis – Test Suite\n")
 
+# ✅ Initialize memory once
+memory = []
+
 for query in queries:
     print(f"\n🟡 User Query: {query}")
 
+    # ✅ Use current memory and sample data
     inputs = {
         "query": query,
-        "df": sample_df
+        "df": sample_df,
+        "memory": memory
     }
 
     try:
@@ -46,6 +49,9 @@ for query in queries:
     except Exception as e:
         print(f"\n❌ Error: {e}")
         continue
+
+    # ✅ Update memory for next query
+    memory = output.get("memory", memory)
 
     result = output.get("result", "❌ No result returned")
     tool_used = output.get("invoked_tool", "❌ Tool not identified")
@@ -58,3 +64,8 @@ for query in queries:
     print("🧾 Tool Input:", tool_input)
 
     print("\n" + "-" * 60)
+
+# ✅ Show final memory summary at the end
+print("\n🧠 Final Memory State:")
+for i, entry in enumerate(memory):
+    print(f"{i+1}. {entry['query']} → {entry['result']}")

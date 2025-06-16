@@ -14,6 +14,7 @@ class ExpenseAgentState(TypedDict):
     result: Optional[str]
     invoked_tool: Optional[str]
     df: pd.DataFrame  # ✅ DataFrame passed through state for all tools
+    memory: Optional[list[Dict[str, Any]]]  # ✅ Add this
 
 
 # Build the graph with 2 nodes: rewriter and tool executor
