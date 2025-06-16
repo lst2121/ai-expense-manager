@@ -8,6 +8,8 @@ from tools.sum_category_expenses_tool import sum_category_expenses_tool
 from tools.date_range_expense_tool import date_range_expense_tool
 from tools.summarize_memory_tool import summarize_memory_tool
 from tools.compare_months_tool import compare_months_tool
+from expense_manager.utils.autofill_helpers import autofill_compare_months_args  # ✅ NEW
+
 import pandas as pd
 
 # Sample dataframe (for test mode)
@@ -31,6 +33,18 @@ TOOL_REGISTRY = {
     "compare_months_tool": compare_months_tool,
 }
 
+# Optional operation-to-tool mapping
+OPERATION_TO_TOOL = {
+    "compare_months": "compare_months_tool",
+    "sum_category_expenses": "sum_category_expenses_tool",
+    "monthly_expenses": "monthly_expenses_tool",
+    "top_expenses": "top_expenses_tool",
+    "summarize_memory": "summarize_memory_tool",
+    "query": "query_tool",
+    "fallback": "fallback_tool",
+    "date_range_expense": "date_range_expense_tool",
+}
+
 def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     tool_input = state.get("tool_input")
     if not tool_input:
@@ -42,10 +56,19 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     tool_name = tool_input.get("tool_name")
     arguments = tool_input.get("arguments", {})
+    operation = tool_input.get("operation")
+
+    # 🧠 If tool_name is missing, try resolving from operation
+    if not tool_name and operation:
+        tool_name = OPERATION_TO_TOOL.get(operation)
 
     # ✅ Inject df if tool likely uses it
     if tool_name != "summarize_memory_tool":
         arguments["df"] = state.get("df")
+
+    # 🧠 Autofill for compare_months_tool if operation matches or tool name is set
+    if operation == "compare_months" or tool_name == "compare_months_tool":
+        arguments = autofill_compare_months_args(arguments)
 
     # ✅ Inject memory if tool uses memory
     if tool_name == "summarize_memory_tool":
@@ -54,7 +77,7 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     if not tool_name or tool_name not in TOOL_REGISTRY:
         return {
             **state,
-            "result": f"❌ Unknown tool: {tool_name}",
+            "result": f"❌ Unknown or missing tool: `{tool_name or operation or 'None'}`",
             "invoked_tool": tool_name or "None"
         }
 

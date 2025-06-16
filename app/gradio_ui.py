@@ -28,7 +28,6 @@ def run_expense_assistant(query, state: dict) -> tuple[str, str, dict]:
     df = state.get("df", pd.DataFrame())
     memory = state.get("memory", [])
 
-    # Use 'query' key instead of 'question'
     result = expense_analysis_app.invoke({"query": query, "df": df})
 
     answer = result.get("result", result.get("answer", "Sorry, I couldn’t understand."))
@@ -45,7 +44,7 @@ with gr.Blocks(css=".suggestion-button {font-size: 0.85rem !important;}") as dem
     gr.Markdown("## 💸 AI Expense Assistant")
 
     with gr.Row():
-        query = gr.Textbox(label="Ask a question", placeholder="e.g. Compare May and June spending")
+        query = gr.Textbox(label="Ask a question", placeholder="e.g. my spendings on groceries in May?")
         submit_btn = gr.Button("🔍 Analyze")
 
     output = gr.Textbox(label="📢 Assistant Response")
@@ -62,12 +61,21 @@ with gr.Blocks(css=".suggestion-button {font-size: 0.85rem !important;}") as dem
         outputs=[output, output_memory, state]
     )
 
+    # ✅ Also trigger on Enter key
+    query.submit(
+        fn=run_expense_assistant,
+        inputs=[query, state],
+        outputs=[output, output_memory, state]
+    )
+
     ### 🧠 Auto-suggested Questions ###
     gr.Markdown("#### 💡 Try one of these:")
     suggestions = [
         "Compare May and June spending",
-        "Show average spending by category",
-        "Which month had highest grocery expense?"
+        # "Show average spending by category",
+        # "Which month had highest grocery expense?"
+        "How much did I spend in June?",
+        "Summarize my past spending",
     ]
 
     for q in suggestions:
