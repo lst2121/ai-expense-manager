@@ -28,24 +28,36 @@ queries = [
     "What did I spend the most on?",
     "Show me rent expenses in June 2025",
     "Breakdown of shopping expenses in May 2025",
+    "How much did I spend in June 2025?",
+    "How much did I spend last month?",
     "How much did I spend on healthcare?",  # Fallback case
-    "Did I spend on food last month?"       # Another fallback
+    "How much I spend on Shopping last month?"       # Relative month test
 ]
 
-print("\n🔎 Running LangGraph Tests:\n")
+print("\n🔎 LangGraph Expense Analysis – Test Suite\n")
 
 for query in queries:
-    print(f"\n🟡 Query: {query}")
+    print(f"\n🟡 User Query: {query}")
 
     inputs = {
         "query": query,
         "df": sample_df
     }
 
-    output = expense_analysis_app.invoke(inputs)
+    try:
+        output = expense_analysis_app.invoke(inputs)
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        continue
 
-    print("\n✅ Final Output:")
-    print(output.get("result", "❌ No result returned"))
+    result = output.get("result", "❌ No result returned")
+    tool_used = output.get("invoked_tool", "❌ Tool not identified")
+    tool_input = output.get("tool_input", {})
 
-    print("\n" + "=" * 60)
-    print(f"🔧 Tool Used: {output.get('invoked_tool', '❌ Not recorded')}")
+    print("\n✅ Result:")
+    print(result)
+
+    print("\n🔧 Tool Used:", tool_used)
+    print("🧾 Tool Input:", tool_input)
+
+    print("\n" + "-" * 60)

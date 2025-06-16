@@ -1,16 +1,16 @@
-# langgraph_app/nodes/rewrite_agent_node.py
-
 from typing import Dict, Any
 from langchain_core.runnables import RunnableLambda
 from langchain_deepseek import ChatDeepSeek
 from pydantic import SecretStr
 from expense_manager import config
+from tools.utils import resolve_time_period  # ✅ Use central util
 import json
 
 # Tool routing map
 OPERATION_TO_TOOL = {
     "top_n_expenses": "top_expenses_tool",
     "list_month_expenses": "monthly_expenses_tool",
+    "sum_category_expenses": "sum_category_expenses_tool",
 }
 
 llm = ChatDeepSeek(
@@ -31,7 +31,11 @@ Operations:
     - n: optional (default is 3)
 
 2. "list_month_expenses"
-    - month: required (format: "YYYY-MM")
+    - month: required (format: "YYYY-MM" or relative like "last month")
+    - category: optional (e.g., "Shopping", "Food")
+
+3. "sum_category_expenses"
+    - category: required (e.g., "Healthcare", "Groceries")
 
 Examples:
 User: Show expenses for June 2025
@@ -42,6 +46,9 @@ User: Top 2 expenses in groceries
 
 User: What did I spend most on?
 -> {"operation": "top_n_expenses"}
+
+User: How much did I spend on healthcare?
+-> {"operation": "sum_category_expenses", "category": "Healthcare"}
 """
 
 def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -53,10 +60,9 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
         content = response.content if hasattr(response, "content") else str(response)
         print(f"\n🧠 LLM RESPONSE: {content}")  # Debug log
 
-        # Use json.loads instead of eval for safety
         parsed = json.loads(content.strip())
-
         operation = parsed.get("operation")
+
         if not operation or operation not in OPERATION_TO_TOOL:
             return {
                 **state,
@@ -65,9 +71,15 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 "invoked_tool": "None"
             }
 
+        arguments = {k: v for k, v in parsed.items() if k != "operation"}
+
+        # ✅ Normalize time period using shared utility
+        if operation == "list_month_expenses" and "month" in arguments:
+            arguments["month"] = resolve_time_period(arguments["month"])
+
         tool_input = {
             "tool_name": OPERATION_TO_TOOL[operation],
-            "arguments": {k: v for k, v in parsed.items() if k != "operation"}
+            "arguments": arguments
         }
 
         print(f"🛠️ Parsed Tool Input: {tool_input}")  # Debug log
