@@ -2,56 +2,75 @@ import gradio as gr
 import pandas as pd
 from langgraph_app.graph import expense_analysis_app
 
-# Sample DataFrame
-data = {
-    "Date": ["2025-06-20", "2025-06-15", "2025-06-10", "2025-06-04", "2025-05-22", "2025-05-10"],
-    "Category": ["Rent", "Groceries", "Shopping", "Subscriptions", "Shopping", "Groceries"],
-    "Amount": [2300, 750.25, 1450, 485.52, 1200, 670],
-    "Notes": ["Monthly Rent", "Big Bazaar", "Flipkart", "Netflix", "Amazon", "Local Store"]
-}
-df = pd.DataFrame(data)
-
-# --- Run Pipeline ---
-def run_pipeline(query, memory):
-    inputs = {
-        "query": query,
-        "df": df,
-        "memory": memory
+# ✅ Clean state init
+def init_state():
+    data = {
+        "Date": ["2025-06-20", "2025-06-15", "2025-06-10", "2025-06-04", "2025-05-22", "2025-05-10"],
+        "Category": ["Rent", "Groceries", "Shopping", "Subscriptions", "Shopping", "Groceries"],
+        "Amount": [2300, 750.25, 1450, 485.52, 1200, 670],
+        "Notes": ["Monthly Rent", "Big Bazaar", "Flipkart", "Netflix", "Amazon", "Local Store"]
     }
-    output = expense_analysis_app.invoke(inputs)
+    return {
+        "df": pd.DataFrame(data),
+        "memory": []
+    }
 
-    updated_memory = output.get("memory", memory)
-    result = output.get("result", {})
-    text = result.get("text") if isinstance(result, dict) else str(result)
+# 🧠 Core handler
+def run_expense_assistant(query, state):
+    if not query.strip():
+        return gr.update(), state
+    state["query"] = query
+    result = expense_analysis_app.invoke(state)
+    return result["result"], result
 
-    # Format chat-like Markdown
-    chat_md = ""
-    for entry in updated_memory:
-        user_q = entry.get("query", "")
-        assistant_r = entry.get("result", "")
-        assistant_r = assistant_r.get("text") if isinstance(assistant_r, dict) else assistant_r
+# 🚀 Auto-suggestions
+suggestions = [
+    "Compare May and June spending",
+    "How much did I spend on groceries in May?",
+    "Show top 3 expense categories",
+    "Summarize my past spending",
+    "Total spent on Subscriptions"
+]
 
-        chat_md += f"**🟢 You:**\n{user_q.strip()}\n\n"
-        chat_md += f"**🤖 Assistant:**\n> {assistant_r.strip()}\n\n---\n"
+# 🧼 UI Setup
+with gr.Blocks(theme=gr.themes.Soft(), css="""
+body {
+    background-color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+}
+.markdown-box {
+    min-height: 180px;
+    border-radius: 12px;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+}
+.suggestion-button button {
+    background-color: #e3f2fd;
+    color: #1e88e5;
+    margin: 4px;
+    border-radius: 10px;
+}
+""") as demo:
 
-    return text, updated_memory, chat_md
+    gr.Markdown("<h1 style='text-align: center;'>💬 AI Expense Assistant</h1>")
 
-# --- Gradio UI ---
-with gr.Blocks() as demo:
-    gr.Markdown("## 💬 AI Expense Assistant (Chat Style)")
-    
+    state = gr.State(init_state())
+
+    query = gr.Textbox(placeholder="Ask a question...", show_label=False)
+    output = gr.Markdown(elem_classes="markdown-box")
+    submit = gr.Button("Submit")
+
+    # 🔘 Auto-suggestion buttons
     with gr.Row():
-        query = gr.Textbox(label="Type your question", placeholder="e.g. Compare May and June spending", scale=5)
-        submit = gr.Button("Submit", scale=1)
+        for q in suggestions:
+            gr.Button(q, elem_classes="suggestion-button") \
+                .click(fn=run_expense_assistant, inputs=[gr.State(q), state], outputs=[output, state])
 
-    output_box = gr.Textbox(label="Latest Assistant Reply", lines=4)
-    chat_log = gr.Markdown(label="🕘 Chat History")
+    submit.click(fn=run_expense_assistant, inputs=[query, state], outputs=[output, state])
+    query.submit(fn=run_expense_assistant, inputs=[query, state], outputs=[output, state])
 
-    memory_state = gr.State([])
+    demo.load(lambda: ("", init_state()), outputs=[output, state])
 
-    # Submit via Enter
-    query.submit(fn=run_pipeline, inputs=[query, memory_state], outputs=[output_box, memory_state, chat_log])
-    # Submit via Button
-    submit.click(fn=run_pipeline, inputs=[query, memory_state], outputs=[output_box, memory_state, chat_log])
-
-demo.launch()
+if __name__ == "__main__":
+    demo.launch()
