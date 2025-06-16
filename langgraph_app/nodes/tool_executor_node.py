@@ -21,7 +21,7 @@ df = pd.DataFrame(data)
 
 # Tool map
 TOOL_REGISTRY = {
-    # "query_tool": query_tool,
+    "query_tool": query_tool,
     "fallback_tool": fallback_tool,
     "top_expenses_tool": top_expenses_tool,
     "monthly_expenses_tool": monthly_expenses_tool,
@@ -43,11 +43,11 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     tool_name = tool_input.get("tool_name")
     arguments = tool_input.get("arguments", {})
 
-    # ✅ Inject df for all tools except summarize
+    # ✅ Inject df if tool likely uses it
     if tool_name != "summarize_memory_tool":
         arguments["df"] = state.get("df")
 
-    # ✅ Inject memory if needed
+    # ✅ Inject memory if tool uses memory
     if tool_name == "summarize_memory_tool":
         arguments["memory"] = state.get("memory", [])
 
@@ -64,10 +64,10 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         tool = TOOL_REGISTRY[tool_name]
         result = tool.invoke(arguments)
 
-        # ✅ If tool returns dict with text, extract it
+        # ✅ If dict with "text", use it. Otherwise, fallback.
         text_result = result.get("text", result) if isinstance(result, dict) else result
 
-        # ✅ Clean memory
+        # ✅ Append to memory
         memory_entry = {
             "query": state["query"],
             "tool_name": tool_name,
@@ -75,7 +75,7 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 k: v for k, v in arguments.items()
                 if k not in ["df", "memory"]
             },
-            "result": text_result
+            "answer": text_result
         }
 
         memory = state.get("memory", [])

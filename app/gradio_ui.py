@@ -1,89 +1,80 @@
 import gradio as gr
 import pandas as pd
+from expense_manager.utils.csv_loader import load_and_prepare_csv
 from langgraph_app.graph import expense_analysis_app
-from expense_manager.utils.csv_loader import load_and_prepare_csv  # ✅ Custom loader
 
-# ✅ Default state initialization
-def init_state():
-    data = {
-        "Date": ["2025-06-20", "2025-06-15", "2025-06-10", "2025-06-04", "2025-05-22", "2025-05-10"],
-        "Category": ["Rent", "Groceries", "Shopping", "Subscriptions", "Shopping", "Groceries"],
-        "Amount": [2300, 750.25, 1450, 485.52, 1200, 670],
-        "Notes": ["Monthly Rent", "Big Bazaar", "Flipkart", "Netflix", "Amazon", "Local Store"]
-    }
-    return {
-        "df": pd.DataFrame(data),
-        "memory": []
-    }
+### 🔧 Utility: Generate Memory Markdown ###
+def generate_memory_markdown(memory: list) -> str:
+    if not memory:
+        return "_No memory yet._"
+    md = "<details><summary>🧠 Memory (click to expand)</summary>\n\n"
+    for i, item in enumerate(memory[-5:]):  # Show last 5
+        query = item.get("query", "N/A")
+        answer = item.get("answer", "N/A")
+        md += f"**Q{i+1}:** {query}\n\n"
+        md += f"**A{i+1}:** {answer}\n\n---\n"
+    md += "</details>"
+    return md
 
-# 🧠 Core handler
-def run_expense_assistant(query, state):
-    if not query.strip():
-        return gr.update(), state
-    state["query"] = query
-    result = expense_analysis_app.invoke(state)
-    return result["result"], result
+### 🔄 File Upload Handler ###
+def handle_file_upload(file_obj) -> tuple[dict, gr.Dataframe]:
+    if file_obj is None:
+        return {"df": pd.DataFrame(), "memory": []}, gr.Dataframe(value=pd.DataFrame())
+    df = load_and_prepare_csv(file_obj.name)
+    return {"df": df, "memory": []}, gr.Dataframe(value=df)
 
-# 📁 File upload logic
-def handle_file_upload(file_path):
-    df = load_and_prepare_csv(file_path)
-    return {"df": df, "memory": []}, gr.update(value=df)
+### 🤖 Main Assistant Logic ###
+def run_expense_assistant(query, state: dict) -> tuple[str, str, dict]:
+    df = state.get("df", pd.DataFrame())
+    memory = state.get("memory", [])
 
-# 🔘 Suggestions
-suggestions = [
-    "Compare May and June spending",
-    "How much did I spend on groceries in May?",
-    "Show top 3 expense categories",
-    "Summarize my past spending",
-]
+    # Use 'query' key instead of 'question'
+    result = expense_analysis_app.invoke({"query": query, "df": df})
 
-# 🧼 Gradio UI
-with gr.Blocks(theme=gr.themes.Soft(), css="""
-.suggestion-button button {
-    background-color: #e3f2fd;
-    color: #1e88e5;
-    margin: 4px;
-    border-radius: 10px;
-    font-size: 0.8rem;
-}
-.markdown-box {
-    min-height: 180px;
-    padding: 1rem;
-    border-radius: 12px;
-    background-color: #f8f9fa;
-    border: 1px solid #ddd;
-}
-""") as demo:
+    answer = result.get("result", result.get("answer", "Sorry, I couldn’t understand."))
 
-    gr.Markdown("<h1 style='text-align: center;'>💬 AI Expense Assistant</h1>")
+    memory.append({"query": query, "answer": answer})
+    memory_md = generate_memory_markdown(memory)
 
-    state = gr.State(init_state())
+    return answer, memory_md, {"df": df, "memory": memory}
 
-    # 📁 CSV Upload + Preview
-    file_upload = gr.File(label="📁 Upload CSV", type="filepath")
-    data_preview = gr.Dataframe(label="📊 Uploaded Data", interactive=False)
+### 🚀 UI Setup ###
+with gr.Blocks(css=".suggestion-button {font-size: 0.85rem !important;}") as demo:
+    state = gr.State({"df": pd.DataFrame(), "memory": []})
 
-    file_upload.change(
-        fn=handle_file_upload,
-        inputs=file_upload,
-        outputs=[state, data_preview]
+    gr.Markdown("## 💸 AI Expense Assistant")
+
+    with gr.Row():
+        query = gr.Textbox(label="Ask a question", placeholder="e.g. Compare May and June spending")
+        submit_btn = gr.Button("🔍 Analyze")
+
+    output = gr.Textbox(label="📢 Assistant Response")
+    output_memory = gr.Markdown()
+
+    ### 📁 File Upload ###
+    file_input = gr.File(label="📁 Upload Expense CSV", file_types=[".csv"])
+    file_input.upload(fn=handle_file_upload, inputs=[file_input], outputs=[state, output])
+
+    ### 🚀 Main Interaction ###
+    submit_btn.click(
+        fn=run_expense_assistant,
+        inputs=[query, state],
+        outputs=[output, output_memory, state]
     )
 
-    # 💬 Input + Output
-    query = gr.Textbox(placeholder="Ask a question...", show_label=False)
-    output = gr.Markdown(elem_classes="markdown-box")
-    submit = gr.Button("Submit")
+    ### 🧠 Auto-suggested Questions ###
+    gr.Markdown("#### 💡 Try one of these:")
+    suggestions = [
+        "Compare May and June spending",
+        "Show average spending by category",
+        "Which month had highest grocery expense?"
+    ]
 
-    # 🔘 Suggested Questions
-    with gr.Row():
-        for q in suggestions:
-            gr.Button(q, elem_classes="suggestion-button") \
-                .click(fn=run_expense_assistant, inputs=[gr.State(q), state], outputs=[output, state])
+    for q in suggestions:
+        gr.Button(q, elem_classes="suggestion-button").click(
+            fn=lambda state, q=q: run_expense_assistant(q, state),
+            inputs=[state],
+            outputs=[output, output_memory, state]
+        )
 
-    submit.click(fn=run_expense_assistant, inputs=[query, state], outputs=[output, state])
-    query.submit(fn=run_expense_assistant, inputs=[query, state], outputs=[output, state])
-
-    demo.load(lambda: ("", init_state(), init_state()["df"]), outputs=[output, state, data_preview])
-
-if __name__ == "__main__":
-    demo.launch()
+demo.launch()

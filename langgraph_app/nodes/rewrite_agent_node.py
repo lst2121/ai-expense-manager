@@ -13,7 +13,7 @@ OPERATION_TO_TOOL = {
     "sum_category_expenses": "sum_category_expenses_tool",
     "date_range_expense": "date_range_expense_tool",
     "summarize_memory": "summarize_memory_tool",
-     "compare_months": "compare_months_tool",
+    "compare_months": "compare_months_tool",
 }
 
 llm = ChatDeepSeek(
@@ -80,8 +80,6 @@ User: Summarize my past spending
 
 User: Compare May and June spending
 -> {"operation": "compare_months", "month1": "2025-05", "month2": "2025-06"}
-
-
 """
 
 def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -106,7 +104,7 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
         arguments = {k: v for k, v in parsed.items() if k != "operation"}
 
-        # ✅ Normalize time period using shared utility
+        # ✅ Normalize time using utility
         if operation == "list_month_expenses" and "month" in arguments:
             arguments["month"] = resolve_time_period(arguments["month"])
 
