@@ -29,7 +29,6 @@ suggestions = [
     "How much did I spend on groceries in May?",
     "Show top 3 expense categories",
     "Summarize my past spending",
-    "Total spent on Subscriptions"
 ]
 
 # 🧼 UI Setup
