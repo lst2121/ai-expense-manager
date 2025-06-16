@@ -7,6 +7,7 @@ from tools.fallback_tool import fallback_tool
 from tools.top_expenses_tool import top_expenses_tool
 from tools.monthly_expenses_tool import monthly_expenses_tool
 from tools.sum_category_expenses_tool import sum_category_expenses_tool
+from tools.date_range_expense_tool import date_range_expense_tool
 import pandas as pd
 
 # Sample dataframe (for test mode)
@@ -25,6 +26,7 @@ TOOL_REGISTRY = {
     "top_expenses_tool": top_expenses_tool,
     "monthly_expenses_tool": monthly_expenses_tool,
     "sum_category_expenses_tool": sum_category_expenses_tool,
+    "date_range_expense_tool": date_range_expense_tool,
 }
 
 def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:

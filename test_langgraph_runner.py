@@ -22,16 +22,13 @@ sample_df = pd.DataFrame(data)
 
 # Test prompts
 queries = [
-    "What are my top 2 expenses?",
-    "Show expenses for June 2025",
-    "Top 1 grocery expense",
-    "What did I spend the most on?",
-    "Show me rent expenses in June 2025",
-    "Breakdown of shopping expenses in May 2025",
-    "How much did I spend in June 2025?",
+    # "Show me rent expenses in June 2025",
+    # "Breakdown of shopping expenses in May 2025",
+    # "How much did I spend in June 2025?",
     "How much did I spend last month?",
-    "How much did I spend on healthcare?",  # Fallback case
-    "How much I spend on Shopping last month?"       # Relative month test
+    "How much did I spend on Rent?",
+    "How much I spend on Groceries last month?",
+    "how much did I spend between 2025-05-01 and 2025-06-10 on subscription",
 ]
 
 print("\n🔎 LangGraph Expense Analysis – Test Suite\n")

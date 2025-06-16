@@ -45,9 +45,10 @@
 │   ├── fallback_tool.py
 │   ├── monthly_expenses_tool.py
 │   ├── query_dataframe_tool.py
+│   ├── sum_category_expenses_tool.py
 │   ├── top_expenses_tool.py
 │   └── utils.py
 └── vector_store
     └── faiss_index
 
-15 directories, 35 files
+15 directories, 36 files

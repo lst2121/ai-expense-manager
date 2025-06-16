@@ -11,6 +11,7 @@ OPERATION_TO_TOOL = {
     "top_n_expenses": "top_expenses_tool",
     "list_month_expenses": "monthly_expenses_tool",
     "sum_category_expenses": "sum_category_expenses_tool",
+    "date_range_expense": "date_range_expense_tool",
 }
 
 llm = ChatDeepSeek(
@@ -36,6 +37,11 @@ Operations:
 
 3. "sum_category_expenses"
     - category: required (e.g., "Healthcare", "Groceries")
+    
+4. "date_range_expense"
+    - category: optional
+    - start_date: required (format: YYYY-MM-DD)
+    - end_date: required (format: YYYY-MM-DD)
 
 Examples:
 User: Show expenses for June 2025
@@ -49,6 +55,13 @@ User: What did I spend most on?
 
 User: How much did I spend on healthcare?
 -> {"operation": "sum_category_expenses", "category": "Healthcare"}
+
+User: How much did I spend between 2025-05-01 and 2025-06-10 on subscription?
+-> {"operation": "date_range_expense", "category": "Subscriptions", "start_date": "2025-05-01", "end_date": "2025-06-10"}
+
+User: How much I spend on Shopping last month?
+-> {"operation": "list_month_expenses", "category": "Shopping", "month": "last month"}
+
 """
 
 def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
