@@ -1,5 +1,3 @@
-# langgraph_app/nodes/tool_executor_node.py
-
 from typing import Dict, Any
 from langchain_core.runnables import RunnableLambda
 from tools.query_dataframe_tool import query_tool
@@ -8,6 +6,8 @@ from tools.top_expenses_tool import top_expenses_tool
 from tools.monthly_expenses_tool import monthly_expenses_tool
 from tools.sum_category_expenses_tool import sum_category_expenses_tool
 from tools.date_range_expense_tool import date_range_expense_tool
+from tools.summarize_memory_tool import summarize_memory_tool
+from tools.compare_months_tool import compare_months_tool
 import pandas as pd
 
 # Sample dataframe (for test mode)
@@ -27,6 +27,8 @@ TOOL_REGISTRY = {
     "monthly_expenses_tool": monthly_expenses_tool,
     "sum_category_expenses_tool": sum_category_expenses_tool,
     "date_range_expense_tool": date_range_expense_tool,
+    "summarize_memory_tool": summarize_memory_tool,
+    "compare_months_tool": compare_months_tool,
 }
 
 def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -40,7 +42,14 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     tool_name = tool_input.get("tool_name")
     arguments = tool_input.get("arguments", {})
-    arguments["df"] = df  # Inject test DataFrame
+
+    # ✅ Inject df for all tools except memory-only ones
+    if tool_name != "summarize_memory_tool":
+        arguments["df"] = state.get("df")
+
+    # ✅ Inject memory only for summarize tool
+    if tool_name == "summarize_memory_tool":
+        arguments["memory"] = state.get("memory", [])
 
     if not tool_name or tool_name not in TOOL_REGISTRY:
         return {
@@ -54,10 +63,26 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         print(f"📦 Arguments: {arguments}")
         tool = TOOL_REGISTRY[tool_name]
         result = tool.invoke(arguments)
+
+        # ✅ Clean memory entry, excluding df/memory
+        memory_entry = {
+            "query": state["query"],
+            "tool_name": tool_name,
+            "tool_args": {
+                k: v for k, v in arguments.items()
+                if k not in ["df", "memory"]
+            },
+            "result": result
+        }
+
+        memory = state.get("memory", [])
+        memory.append(memory_entry)
+
         return {
             **state,
             "result": result,
-            "invoked_tool": tool_name
+            "invoked_tool": tool_name,
+            "memory": memory,
         }
     except Exception as e:
         return {

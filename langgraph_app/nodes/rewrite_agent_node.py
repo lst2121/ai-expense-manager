@@ -12,6 +12,8 @@ OPERATION_TO_TOOL = {
     "list_month_expenses": "monthly_expenses_tool",
     "sum_category_expenses": "sum_category_expenses_tool",
     "date_range_expense": "date_range_expense_tool",
+    "summarize_memory": "summarize_memory_tool",
+     "compare_months": "compare_months_tool",
 }
 
 llm = ChatDeepSeek(
@@ -43,6 +45,14 @@ Operations:
     - start_date: required (format: YYYY-MM-DD)
     - end_date: required (format: YYYY-MM-DD)
 
+5. "summarize_memory"
+    - No arguments required. Summarizes all past spending memory.
+
+6. "compare_months"
+    - month1: required (e.g., "2025-05")
+    - month2: required (e.g., "2025-06")
+    - category: optional (e.g., "Shopping")
+
 Examples:
 User: Show expenses for June 2025
 -> {"operation": "list_month_expenses", "month": "2025-06"}
@@ -61,6 +71,16 @@ User: How much did I spend between 2025-05-01 and 2025-06-10 on subscription?
 
 User: How much I spend on Shopping last month?
 -> {"operation": "list_month_expenses", "category": "Shopping", "month": "last month"}
+
+User: How much did I spend on groceries in May?
+-> {"operation": "list_month_expenses", "month": "2025-05", "category": "Groceries"}
+
+User: Summarize my past spending
+-> {"operation": "summarize_memory"}
+
+User: Compare May and June spending
+-> {"operation": "compare_months", "month1": "2025-05", "month2": "2025-06"}
+
 
 """
 
