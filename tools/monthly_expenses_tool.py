@@ -1,6 +1,6 @@
 # tools/monthly_expenses_tool.py
-
-from typing import Optional, TypedDict
+from typing_extensions import TypedDict
+from typing import Optional
 import pandas as pd
 from langchain_core.tools import tool
 from tools.utils import fuzzy_match_category, parse_month_string
@@ -39,6 +39,8 @@ def monthly_expenses_tool(
         parsed = parse_month_string(month)
         if not parsed:
             return f"⚠️ Could not parse month from '{month}'"
+         # Ensure 'Date' column is string type
+        filtered["Date"] = filtered["Date"].astype(str)
         filtered = filtered[filtered["Date"].str.startswith(parsed)]
 
         # --- Category Filter ---

@@ -1,25 +1,25 @@
 # Core language tools
-python-dotenv             # For reading API keys from .env
+python-dotenv==1.1.0
 
 # Data handling
-pandas                    # For reading and analyzing CSV files
+pandas==2.3.0
 
 # LLM integration
-langchain                 # Framework for working with LLMs
-langchain-community       # Required for some wrappers & tools
-langchain-core            # Core interfaces (usually included with langchain)
-langchain-openai          # Needed as base for DeepSeek integration
-langchain-deepseek        # Latest LangChain integration with DeepSeek
-langchain-huggingface
-langgraph
-sentence-transformers
-faiss-cpu
+langchain==0.3.25
+langchain-community==0.3.25
+langchain-core==0.3.65
+langchain-openai==0.3.23
+langchain-deepseek==0.1.3
+langchain-huggingface==0.3.0
+langgraph==0.3.3
+sentence-transformers==4.1.0
+faiss-cpu==1.11.0
 
 # Optional (for CLI testing or tracing)
-tqdm                      # For progress bars (optional but nice)
-tabulate                  # Pretty prints data in console
+tqdm==4.67.1
+tabulate==0.9.0
 
 # Phase 2: UI
-gradio                    # Lightweight web UI for app (to be used later)
-matplotlib
-plotly
+gradio==5.34.0
+matplotlib==3.10.3
+plotly==6.1.2

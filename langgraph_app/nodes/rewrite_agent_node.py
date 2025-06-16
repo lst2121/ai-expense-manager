@@ -2,8 +2,17 @@ from typing import Dict, Any
 from langchain_core.runnables import RunnableLambda
 from langchain_deepseek import ChatDeepSeek
 from pydantic import SecretStr
-
 from expense_manager import config
+from tools.utils import resolve_time_period  # ✅ Use central util
+import json
+
+# Tool routing map
+OPERATION_TO_TOOL = {
+    "top_n_expenses": "top_expenses_tool",
+    "list_month_expenses": "monthly_expenses_tool",
+    "sum_category_expenses": "sum_category_expenses_tool",
+    "date_range_expense": "date_range_expense_tool",
+}
 
 llm = ChatDeepSeek(
     temperature=config.TEMPERATURE,
@@ -23,7 +32,16 @@ Operations:
     - n: optional (default is 3)
 
 2. "list_month_expenses"
-    - month: required (format: "YYYY-MM")
+    - month: required (format: "YYYY-MM" or relative like "last month")
+    - category: optional (e.g., "Shopping", "Food")
+
+3. "sum_category_expenses"
+    - category: required (e.g., "Healthcare", "Groceries")
+    
+4. "date_range_expense"
+    - category: optional
+    - start_date: required (format: YYYY-MM-DD)
+    - end_date: required (format: YYYY-MM-DD)
 
 Examples:
 User: Show expenses for June 2025
@@ -34,6 +52,16 @@ User: Top 2 expenses in groceries
 
 User: What did I spend most on?
 -> {"operation": "top_n_expenses"}
+
+User: How much did I spend on healthcare?
+-> {"operation": "sum_category_expenses", "category": "Healthcare"}
+
+User: How much did I spend between 2025-05-01 and 2025-06-10 on subscription?
+-> {"operation": "date_range_expense", "category": "Subscriptions", "start_date": "2025-05-01", "end_date": "2025-06-10"}
+
+User: How much I spend on Shopping last month?
+-> {"operation": "list_month_expenses", "category": "Shopping", "month": "last month"}
+
 """
 
 def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -43,11 +71,44 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
     try:
         response = llm.invoke(prompt)
         content = response.content if hasattr(response, "content") else str(response)
-        tool_input = eval(content.strip())
+        print(f"\n🧠 LLM RESPONSE: {content}")  # Debug log
 
-        return {**state, "tool_input": tool_input}
+        parsed = json.loads(content.strip())
+        operation = parsed.get("operation")
+
+        if not operation or operation not in OPERATION_TO_TOOL:
+            return {
+                **state,
+                "result": f"❌ Unknown or missing operation: {operation}",
+                "tool_input": None,
+                "invoked_tool": "None"
+            }
+
+        arguments = {k: v for k, v in parsed.items() if k != "operation"}
+
+        # ✅ Normalize time period using shared utility
+        if operation == "list_month_expenses" and "month" in arguments:
+            arguments["month"] = resolve_time_period(arguments["month"])
+
+        tool_input = {
+            "tool_name": OPERATION_TO_TOOL[operation],
+            "arguments": arguments
+        }
+
+        print(f"🛠️ Parsed Tool Input: {tool_input}")  # Debug log
+
+        return {
+            **state,
+            "tool_input": tool_input,
+            "invoked_tool": tool_input["tool_name"]
+        }
 
     except Exception as e:
-        return {**state, "tool_input": None, "result": f"❌ Failed to parse tool input: {e}"}
+        return {
+            **state,
+            "result": f"❌ Failed to parse tool input: {e}",
+            "tool_input": None,
+            "invoked_tool": "None"
+        }
 
 rewrite_agent_node = RunnableLambda(rewrite_agent_node)

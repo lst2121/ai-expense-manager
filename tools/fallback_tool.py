@@ -1,6 +1,6 @@
 # tools/fallback_tool.py
 
-from typing import TypedDict
+from typing_extensions import TypedDict
 import pandas as pd
 from langchain_core.tools import tool
 
