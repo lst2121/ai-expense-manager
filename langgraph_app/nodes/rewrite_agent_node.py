@@ -114,7 +114,15 @@ User: What is the average rent I paid in last two months?
 """
 
 def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    query = state["query"]
+    query = state.get("query", "")
+    if not query:
+        return {
+            **state,
+            "result": "❌ Missing query input.",
+            "tool_input": None,
+            "invoked_tool": "None"
+        }
+    
     prompt = f"{SYSTEM_PROMPT}\n\nUser: {query}\n->"
 
     try:
@@ -135,9 +143,33 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
         arguments = {k: v for k, v in parsed.items() if k != "operation"}
 
-        # ✅ Normalize time using utility
-        if operation == "list_month_expenses" and "month" in arguments:
-            arguments["month"] = resolve_time_period(arguments["month"])
+        # Normalize time arguments for all relevant operations
+        time_keys = []
+        if operation == "list_month_expenses":
+            time_keys = ["month"]
+        elif operation in ["compare_category", "average_category_expense", "category_summary"]:
+            time_keys = ["months"]
+        elif operation == "compare_months":
+            time_keys = ["month1", "month2"]
+        elif operation == "date_range_expense":
+            time_keys = []  # full dates handled separately
+
+        for key in time_keys:
+            if key in arguments and arguments[key]:
+                if isinstance(arguments[key], list):
+                    resolved_list = []
+                    for val in arguments[key]:
+                        resolved = resolve_time_period(val)
+                        if resolved:
+                            if isinstance(resolved, list):
+                                resolved_list.extend(resolved)
+                            else:
+                                resolved_list.append(resolved)
+                    arguments[key] = resolved_list
+                else:
+                    resolved = resolve_time_period(arguments[key])
+                    if resolved:
+                        arguments[key] = resolved
 
         tool_input = {
             "tool_name": OPERATION_TO_TOOL[operation],

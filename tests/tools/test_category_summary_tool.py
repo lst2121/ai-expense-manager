@@ -1,11 +1,14 @@
 import pandas as pd
 import sys
 import os
+import pytest
 from pydantic import ValidationError
 
+# Add project root to path for module resolution
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from tools.category_summary_tool import category_summary_tool
+
 
 def test_category_summary_tool_total():
     df = pd.DataFrame({
@@ -25,6 +28,7 @@ def test_category_summary_tool_total():
     assert "₹" in result["text"]
     assert "Total" in result["text"]
 
+
 def test_category_summary_tool_average():
     df = pd.DataFrame({
         "Date": ["2025-04-01", "2025-05-01", "2025-06-01"],
@@ -40,6 +44,7 @@ def test_category_summary_tool_average():
 
     assert "Average per month" in result["text"]
     assert "Utilities" in result["text"]
+
 
 def test_category_summary_tool_count():
     df = pd.DataFrame({
@@ -57,6 +62,7 @@ def test_category_summary_tool_count():
     assert "Transactions" in result["text"]
     assert "3" in result["text"]
 
+
 def test_category_summary_tool_fuzzy_match():
     df = pd.DataFrame({
         "Date": ["2025-05-01", "2025-05-10"],
@@ -66,12 +72,13 @@ def test_category_summary_tool_fuzzy_match():
 
     result = category_summary_tool.invoke({
         "df": df,
-        "category": "grocery",
+        "category": "grocery",  # fuzzy match test
         "mode": "total"
     })
 
     assert "Groceries" in result["text"]
     assert "₹" in result["text"]
+
 
 def test_category_summary_tool_invalid_mode():
     df = pd.DataFrame({
@@ -88,6 +95,7 @@ def test_category_summary_tool_invalid_mode():
 
     assert "Invalid mode" in result["text"]
 
+
 def test_category_summary_tool_missing_category():
     df = pd.DataFrame({
         "Date": ["2025-05-01"],
@@ -95,14 +103,13 @@ def test_category_summary_tool_missing_category():
         "Amount": [100]
     })
 
-    try:
+    # 'category' is a required argument; invoking without should raise a ValidationError
+    with pytest.raises(ValidationError):
         category_summary_tool.invoke({
             "df": df,
             "mode": "total"
         })
-        assert False, "Expected ValidationError due to missing required 'category'"
-    except ValidationError:
-        pass
+
 
 def test_category_summary_tool_no_data_found():
     df = pd.DataFrame({
@@ -118,6 +125,7 @@ def test_category_summary_tool_no_data_found():
     })
 
     assert "Could not match category" in result["text"] or "No records found" in result["text"]
+
 
 if __name__ == "__main__":
     test_category_summary_tool_total()

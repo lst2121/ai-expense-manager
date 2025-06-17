@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import pandas as pd
 from langchain_core.tools import tool
 from tools.utils import resolve_time_period, fuzzy_match_category
@@ -8,7 +8,7 @@ def category_summary_tool(
     df: pd.DataFrame,
     category: str,
     mode: str = "total",
-    month: str = ""
+    month: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     📊 Category Summary Tool
@@ -30,11 +30,17 @@ def category_summary_tool(
     - dict: {'text': ..., 'chart': None}
     """
     try:
+        if df.empty:
+            return {
+                "text": "⚠️ No data available to analyze.",
+                "chart": None
+            }
+
         data = df.copy()
         data["Date"] = pd.to_datetime(data["Date"])
         data["Month"] = data["Date"].dt.to_period("M").astype(str)
 
-        # Fuzzy match
+        # Fuzzy match category
         matched_category = fuzzy_match_category(category, data["Category"].unique().tolist())
         if not matched_category:
             return {
@@ -44,60 +50,50 @@ def category_summary_tool(
 
         data = data[data["Category"].str.lower() == matched_category.lower()]
 
-        # Handle optional month filter
+        # Filter by month if given
+        resolved_period_str = ""
         if month:
             resolved = resolve_time_period(month)
             if isinstance(resolved, list):
                 data = data[data["Month"].isin(resolved)]
-                resolved_str = ", ".join(resolved)
+                resolved_period_str = ", ".join(resolved)
             elif isinstance(resolved, str):
                 data = data[data["Month"] == resolved]
-                resolved_str = resolved
+                resolved_period_str = resolved
             else:
                 return {
                     "text": f"❌ Could not resolve time period '{month}'.",
                     "chart": None
                 }
-        else:
-            resolved_str = ""
 
         if data.empty:
             return {
-                "text": f"🔍 No records found for '{matched_category}'{f' in {resolved_str}' if month else ''}.",
+                "text": f"🔍 No records found for '{matched_category}'{f' in {resolved_period_str}' if month else ''}.",
                 "chart": None
             }
 
-        # --- Summary Logic ---
+        # Compose result text
         result = f"📊 {mode.capitalize()} for category '{matched_category}'"
-        if resolved_str:
-            result += f" in {resolved_str}"
+        if resolved_period_str:
+            result += f" in {resolved_period_str}"
         result += ":\n"
 
         if mode == "total":
             total = data["Amount"].sum()
             result += f"• Total: ₹{total:.2f}"
-
         elif mode == "average":
             monthly_avg = data.groupby("Month")["Amount"].sum().mean()
-            result += f"• Average per month: ₹{monthly_avg:.2f}"  # <-- FIXED TEXT
-
+            result += f"• Average per month: ₹{monthly_avg:.2f}"
         elif mode == "count":
             count = len(data)
             result += f"• Transactions: {count}"
-
         else:
             return {
                 "text": f"❌ Invalid mode '{mode}'. Choose from total, average, count.",
                 "chart": None
             }
 
-        return {
-            "text": result,
-            "chart": None
-        }
+        return {"text": result, "chart": None}
 
     except Exception as e:
-        return {
-            "text": f"❌ Error: {str(e)}",
-            "chart": None
-        }
+        return {"text": f"❌ Error: {str(e)}", "chart": None}
