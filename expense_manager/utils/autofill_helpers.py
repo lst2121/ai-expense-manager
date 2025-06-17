@@ -1,6 +1,7 @@
 # utils/autofill_helpers.py
 
 import pandas as pd
+from typing import Optional
 
 def autofill_compare_months_args(arguments: dict) -> dict:
     """
@@ -37,3 +38,49 @@ def autofill_compare_months_args(arguments: dict) -> dict:
         arguments.setdefault("month2", recent_months[0])
 
     return arguments
+
+def infer_category_from_notes(notes: str) -> str:
+    """
+    Infers the expense category based on keywords in the transaction notes.
+    Args:
+        notes: Transaction notes or description.
+    Returns:
+        Inferred category (e.g., 'Shopping', 'Dining', 'Utilities').
+    """
+    if not notes:
+        return "Uncategorized"
+
+    notes_lower = notes.lower()
+
+    # Define keyword-to-category mappings
+    category_mappings = {
+        "amazon": "Shopping/E-commerce",
+        "flipkart": "Shopping/E-commerce",
+        "zomato": "Dining",
+        "swiggy": "Dining",
+        "diesel": "Fuel",
+        "petrol": "Fuel",
+        "spotify": "Subscriptions",
+        "netflix": "Subscriptions",
+        "electricity": "Utilities",
+        "rent": "Rent",
+    }
+
+    for keyword, category in category_mappings.items():
+        if keyword in notes_lower:
+            return category
+
+    return "Uncategorized"
+
+def autofill_category(notes: str, current_category: Optional[str] = None) -> str:
+    """
+    Autofills the category based on transaction notes, preserving manual overrides.
+    Args:
+        notes: Transaction notes or description.
+        current_category: Existing category (if any).
+    Returns:
+        Inferred or existing category.
+    """
+    if current_category and current_category != "Uncategorized":
+        return current_category
+    return infer_category_from_notes(notes or "")
