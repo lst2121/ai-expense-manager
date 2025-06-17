@@ -2,6 +2,7 @@
 
 import pandas as pd
 from typing import Optional
+from fuzzywuzzy import fuzz
 
 def autofill_compare_months_args(arguments: dict) -> dict:
     """
@@ -39,37 +40,50 @@ def autofill_compare_months_args(arguments: dict) -> dict:
 
     return arguments
 
-def infer_category_from_notes(notes: str) -> str:
+# Mapping of keywords to categories (expand as needed)
+CATEGORY_KEYWORDS = {
+    "amazon": "Shopping/E-commerce",
+    "flipkart": "Shopping/E-commerce",
+    "zomato": "Dining",
+    "swiggy": "Dining",
+    "diesel": "Fuel",
+    "petrol": "Fuel",
+    "spotify": "Subscriptions",
+    "netflix": "Subscriptions",
+    "electricity": "Utilities",
+    "rent": "Rent",
+    "grocery": "Groceries",
+    "groceries": "Groceries",
+    "food": "Dining",
+    "dining": "Dining",
+    "restaurant": "Dining",
+    "cafe": "Dining",
+}
+
+def infer_category_from_notes(notes, threshold=80):
     """
-    Infers the expense category based on keywords in the transaction notes.
+    Infer the category from transaction notes using keyword and fuzzy matching.
     Args:
-        notes: Transaction notes or description.
+        notes (str): Transaction notes/description.
+        threshold (int): Minimum fuzzy match score (0-100).
     Returns:
-        Inferred category (e.g., 'Shopping', 'Dining', 'Utilities').
+        str: Inferred category or "Uncategorized".
     """
     if not notes:
         return "Uncategorized"
-
+    
     notes_lower = notes.lower()
-
-    # Define keyword-to-category mappings
-    category_mappings = {
-        "amazon": "Shopping/E-commerce",
-        "flipkart": "Shopping/E-commerce",
-        "zomato": "Dining",
-        "swiggy": "Dining",
-        "diesel": "Fuel",
-        "petrol": "Fuel",
-        "spotify": "Subscriptions",
-        "netflix": "Subscriptions",
-        "electricity": "Utilities",
-        "rent": "Rent",
-    }
-
-    for keyword, category in category_mappings.items():
+    
+    # Exact keyword match
+    for keyword, category in CATEGORY_KEYWORDS.items():
         if keyword in notes_lower:
             return category
-
+    
+    # Fuzzy match if no exact match found
+    for keyword, category in CATEGORY_KEYWORDS.items():
+        if fuzz.partial_ratio(keyword, notes_lower) >= threshold:
+            return category
+    
     return "Uncategorized"
 
 def autofill_category(notes: str, current_category: Optional[str] = None) -> str:
