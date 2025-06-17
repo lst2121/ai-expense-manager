@@ -179,6 +179,53 @@ def search_conversations(search_term: str):
     
     return display_text
 
+### 💬 ChatGPT-like Interface Functions ###
+def handle_chatbot_message(message, history, current_state):
+    """Handle chatbot message submission."""
+    if not message or not message.strip():
+        return history, current_state, ""
+    
+    if current_state.get('df') is None or current_state['df'].empty:
+        bot_response = "⚠️ Please upload a CSV file first to analyze your expenses."
+        history.append((message, bot_response))
+        return history, current_state, ""
+    
+    try:
+        # Get AI response
+        result, updated_state = run_expense_assistant(message, current_state)
+        
+        # Add to chat history
+        history.append((message, result))
+        
+        return history, updated_state, ""
+        
+    except Exception as e:
+        error_msg = f"❌ Analysis failed: {e}"
+        history.append((message, error_msg))
+        return history, current_state, ""
+
+def handle_chatbot_suggestion(suggestion_text, history, current_state):
+    """Handle suggestion button clicks in chatbot."""
+    return handle_chatbot_message(suggestion_text, history, current_state)
+
+def handle_chatbot_file_upload(file_obj, history, current_state):
+    """Handle file upload for chatbot interface."""
+    if file_obj is None:
+        return current_state, "No file uploaded", history, gr.Dataframe(value=pd.DataFrame())
+    
+    try:
+        df = load_and_prepare_csv(file_obj.name)
+        message = f"✅ Loaded {len(df)} expense records. You can now ask questions about your expenses!"
+        
+        # Add system message to chat
+        history.append(("📁 File uploaded", message))
+        
+        return {"df": df}, message, history, gr.Dataframe(value=df.head(10))
+    except Exception as e:
+        error_msg = f"❌ Error loading file: {e}"
+        history.append(("📁 File upload", error_msg))
+        return {"df": pd.DataFrame()}, error_msg, history, gr.Dataframe(value=pd.DataFrame())
+
 ### 🎨 UI Setup ###
 custom_css = """
 .gradio-container {
@@ -190,6 +237,22 @@ custom_css = """
     border-radius: 12px;
     padding: 20px;
     margin: 10px 0;
+}
+
+/* ChatGPT-like interface styling */
+.chatbot-container {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e1e5e9;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.chat-input-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+    border: 1px solid #e1e5e9;
 }
 
 /* Target the memory sidebar container */
@@ -329,6 +392,56 @@ with gr.Blocks(css=custom_css, title="AI Expense Assistant - Enhanced") as demo:
                         suggest2 = gr.Button("Compare transportation vs dining", size="sm")
                         suggest3 = gr.Button("Find top 5 expenses and analyze", size="sm")
 
+        # ==================== CHAT UI TAB (ChatGPT-like) ====================
+        with gr.TabItem("💬 Chat UI", id="chat-ui"):
+            
+            with gr.Row():
+                with gr.Column(scale=3):
+                    # ChatGPT-like conversation interface
+                    chatbot = gr.Chatbot(
+                        label="💬 Conversation",
+                        height=400,
+                        elem_classes="chatbot-container",
+                        show_label=True,
+                        container=True,
+                        bubble_full_width=False
+                    )
+                    
+                    # Message input area
+                    with gr.Group(elem_classes="chat-input-container"):
+                        with gr.Row():
+                            chat_input = gr.Textbox(
+                                label="",
+                                placeholder="💭 Ask me anything about your expenses...",
+                                lines=2,
+                                scale=4,
+                                show_label=False,
+                                container=False
+                            )
+                            chat_send_btn = gr.Button("🚀 Send", variant="primary", scale=1, size="lg")
+                    
+                    # Quick action buttons
+                    with gr.Row():
+                        chat_suggest1 = gr.Button("📊 Show top 5 expenses", size="sm", variant="secondary")
+                        chat_suggest2 = gr.Button("🛒 Grocery spending trends", size="sm", variant="secondary")
+                        chat_suggest3 = gr.Button("🚗 Transportation vs dining", size="sm", variant="secondary")
+                        chat_clear_btn = gr.Button("🧹 Clear Chat", size="sm", variant="secondary")
+                
+                with gr.Column(scale=1):
+                    # File upload for chat interface
+                    with gr.Group():
+                        gr.Markdown("### 📁 Data Upload")
+                        chat_file_input = gr.File(label="Upload CSV", file_types=[".csv"])
+                        chat_upload_status = gr.Textbox(label="Status", value="No file uploaded", interactive=False)
+                    
+                    # Data preview
+                    with gr.Group():
+                        gr.Markdown("### 📊 Data Preview")
+                        chat_data_preview = gr.Dataframe(
+                            value=pd.DataFrame(),
+                            interactive=False,
+                            wrap=True
+                        )
         
         # ==================== MEMORY TAB ====================
         with gr.TabItem("🧠 Memory Center", id="memory"):
@@ -446,6 +559,53 @@ with gr.Blocks(css=custom_css, title="AI Expense Assistant - Enhanced") as demo:
     refresh_btn.click(
         fn=get_full_memory_display,
         outputs=[full_memory_display]
+    )
+    
+    # ==================== CHAT UI EVENT HANDLERS ====================
+    
+    # Chat message submission
+    chat_send_btn.click(
+        fn=handle_chatbot_message,
+        inputs=[chat_input, chatbot, state],
+        outputs=[chatbot, state, chat_input]
+    )
+    
+    chat_input.submit(
+        fn=handle_chatbot_message,
+        inputs=[chat_input, chatbot, state],
+        outputs=[chatbot, state, chat_input]
+    )
+    
+    # Chat suggestion buttons
+    chat_suggest1.click(
+        fn=lambda history, state: handle_chatbot_suggestion("Show top 5 expenses", history, state),
+        inputs=[chatbot, state],
+        outputs=[chatbot, state, chat_input]
+    )
+    
+    chat_suggest2.click(
+        fn=lambda history, state: handle_chatbot_suggestion("Show grocery trends over 3 months", history, state),
+        inputs=[chatbot, state],
+        outputs=[chatbot, state, chat_input]
+    )
+    
+    chat_suggest3.click(
+        fn=lambda history, state: handle_chatbot_suggestion("Compare transportation vs dining", history, state),
+        inputs=[chatbot, state],
+        outputs=[chatbot, state, chat_input]
+    )
+    
+    # Clear chat
+    chat_clear_btn.click(
+        fn=lambda: ([], ""),
+        outputs=[chatbot, chat_input]
+    )
+    
+    # Chat file upload
+    chat_file_input.upload(
+        fn=handle_chatbot_file_upload,
+        inputs=[chat_file_input, chatbot, state],
+        outputs=[state, chat_upload_status, chatbot, chat_data_preview]
     )
 
 # Launch configuration

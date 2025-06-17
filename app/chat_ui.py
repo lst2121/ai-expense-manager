@@ -289,3 +289,59 @@ if __name__ == "__main__":
         share=False,
         show_error=True
     ) 
+
+def summarize_memory_tool(memory, df):
+    """
+    Generates deep-dive questions based on expense data, avoiding string ops on numeric fields.
+    Args:
+        memory: List of past interactions (unused here).
+        df: DataFrame with expense data.
+    Returns:
+        List of suggested questions or analysis prompts.
+    """
+    try:
+        # Ensure df is a DataFrame and has required columns
+        if not isinstance(df, pd.DataFrame) or df.empty:
+            return ["No data available for analysis."]
+
+        questions = []
+
+        # 1. Top categories analysis
+        top_categories = df.groupby('Category')['Amount'].sum().nlargest(3)
+        if not top_categories.empty:
+            questions.append(
+                f"Top spending categories: {', '.join(top_categories.index)}. "
+                f"Why do these dominate your expenses?"
+            )
+
+        # 2. Monthly trends (numeric analysis)
+        monthly_totals = df.groupby('Month')['Amount'].sum()
+        if len(monthly_totals) > 1:
+            max_month = monthly_totals.idxmax()
+            questions.append(
+                f"Highest spending month: {max_month} (₹{monthly_totals[max_month]:.2f}). "
+                f"What drove this peak?"
+            )
+
+        # 3. Anomaly detection (numeric)
+        mean_amount = df['Amount'].mean()
+        outliers = df[df['Amount'] > 2 * mean_amount]
+        if not outliers.empty:
+            questions.append(
+                f"Potential outliers: {len(outliers)} expenses exceed ₹{2 * mean_amount:.2f}. "
+                f"Review these for errors or bulk purchases."
+            )
+
+        # 4. Behavioral prompts (text fields only)
+        if 'Notes' in df.columns:
+            frequent_notes = df['Notes'].value_counts().head(2)
+            if not frequent_notes.empty:
+                questions.append(
+                    f"Frequent notes: {', '.join(frequent_notes.index)}. "
+                    f"Are these recurring or one-time expenses?"
+                )
+
+        return questions if questions else ["No patterns detected. Try more specific queries."]
+
+    except Exception as e:
+        return [f"Analysis error: {str(e)}"] 
