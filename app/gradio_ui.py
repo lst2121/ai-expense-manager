@@ -1,6 +1,14 @@
 import gradio as gr
 import pandas as pd
+from datetime import datetime
 from expense_manager.utils.csv_loader import load_and_prepare_csv
+from expense_manager.memory_system import memory_system
+from app.memory_ui_components import (
+    generate_memory_display, 
+    export_memory_handler, 
+    clear_memory_handler,
+    search_memory_handler
+)
 from langgraph_app.graph import expense_analysis_app
 
 ### 🔧 Utility: Generate Memory Markdown ###
@@ -76,7 +84,7 @@ with gr.Blocks(
         fn=run_expense_assistant,
         inputs=[query, state],
         outputs=[output, output_memory, state, query],
-        show_progress=True,
+        show_progress="full",
         scroll_to_output=True
     )
 
@@ -85,7 +93,7 @@ with gr.Blocks(
         fn=run_expense_assistant,
         inputs=[query, state],
         outputs=[output, output_memory, state, query],
-        show_progress=True,
+        show_progress="full",
         scroll_to_output=True
     )
 
@@ -106,7 +114,7 @@ with gr.Blocks(
             fn=lambda state, q=q: run_expense_assistant(q, state),
             inputs=[state],
             outputs=[output, output_memory, state, query],
-            show_progress=True,
+            show_progress="full",
             scroll_to_output=True
         )
 

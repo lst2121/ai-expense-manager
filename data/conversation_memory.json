@@ -1,0 +1,488 @@
+[
+  {
+    "id": "conv_1",
+    "session_id": "session_20250617_204342",
+    "timestamp": "2025-06-17T20:43:44.661105",
+    "query": "How much did I spend on groceries?",
+    "result": "\ud83e\uddfe Total spent on 'Groceries': \u20b9920.00",
+    "metadata": {
+      "is_multi_step": false,
+      "execution_time": 0.8,
+      "invoked_tool": "sum_category_expenses_tool"
+    },
+    "query_type": "simple",
+    "execution_time": 0.8
+  },
+  {
+    "id": "conv_2",
+    "session_id": "session_20250617_204342",
+    "timestamp": "2025-06-17T20:43:44.661626",
+    "query": "Show grocery trends over the last 3 months",
+    "result": "\ud83d\udcca Grocery Spending Trends (May - July 2025)\n\nMonthly Breakdown:\n- May 2025: \u20b9400.00\n- June 2025: \u20b9450.00 (+12.5% from May)\n- July 2025: \u20b9500.00 (+11.1% from June)\n\n\ud83d\udcc8 Analysis: Your grocery spending shows a consistent upward trend with an average monthly increase of 11.8%. This could indicate inflation or increased consumption.",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "step_description": "Get grocery expenses for May",
+          "success": true
+        },
+        {
+          "step_description": "Get grocery expenses for June",
+          "success": true
+        },
+        {
+          "step_description": "Get grocery expenses for July",
+          "success": true
+        }
+      ],
+      "execution_time": 2.3,
+      "invoked_tool": "chain_executor"
+    },
+    "query_type": "complex",
+    "execution_time": 2.3
+  },
+  {
+    "id": "conv_3",
+    "session_id": "session_20250617_204342",
+    "timestamp": "2025-06-17T20:43:44.662471",
+    "query": "Compare transportation vs dining expenses",
+    "result": "\ud83d\udcca Comparison of 'Transportation' vs 'Dining':\n\u2022 Total Transportation: \u20b9530.00\n\u2022 Total Dining: \u20b9350.00\n\u2022 Higher spend: Transportation\n\n\ud83d\udca1 Transportation costs are 51% higher than dining expenses.",
+    "metadata": {
+      "is_multi_step": false,
+      "execution_time": 1.1,
+      "invoked_tool": "compare_category_tool"
+    },
+    "query_type": "simple",
+    "execution_time": 1.1
+  },
+  {
+    "id": "conv_4",
+    "session_id": "session_20250617_204342",
+    "timestamp": "2025-06-17T20:43:44.663301",
+    "query": "Find my top 5 expenses and analyze the categories involved",
+    "result": "\ud83d\udd0d Multi-Step Analysis Complete!\n\n**Top 5 Expenses:**\n1. June rent - \u20b91200 (2025-06-18)\n2. May rent - \u20b91000 (2025-05-20)\n3. Whole Foods - \u20b9500 (2025-07-01)\n4. Costco June - \u20b9450 (2025-06-01)\n5. Movies - \u20b9400 (2025-07-15)\n\n**Category Analysis:**\n- Rent: 44% of top expenses (\u20b92200)\n- Groceries: 38% of top expenses (\u20b9950)\n- Entertainment: 18% of top expenses (\u20b9400)\n\n\ud83d\udca1 Insight: Rent dominates your highest expenses, which is typical. Consider reviewing grocery spending efficiency.",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "step_description": "Get top 5 expenses",
+          "success": true
+        },
+        {
+          "step_description": "Analyze expense categories",
+          "success": true
+        },
+        {
+          "step_description": "Generate insights",
+          "success": true
+        }
+      ],
+      "execution_time": 3.1,
+      "invoked_tool": "chain_executor"
+    },
+    "query_type": "complex",
+    "execution_time": 3.1
+  },
+  {
+    "id": "conv_5",
+    "session_id": "session_20250617_204928",
+    "timestamp": "2025-06-17T20:51:38.575960",
+    "query": "Show grocery trends over 3 months",
+    "result": "### \ud83d\uded2 **Grocery Spending Trends (3-Month Analysis)**  \n\nHere\u2019s a breakdown of your grocery expenses over the past 3 months, along with key insights and actionable takeaways:  \n\n---  \n\n#### \ud83d\udcca **Monthly Totals & Trends**  \n1. **May 2025**: \u20b93,744.02  \n   - 4 transactions (Costco, Trader Joe\u2019s)  \n   - Highest single purchase: \u20b91,429.20 (Trader Joe\u2019s)  \n   - **Peak spending month**  \n\n2. **June 2025**: \u20b91,604.31  \n   - 4 transactions (Walmart, Costco)  \n   - Significant drop (-57%) from May  \n   - Lowest single purchase: \u20b9118.12 (Walmart)  \n\n3. **July 2025**: No data found  \n   - Possible reasons:  \n     - No transactions categorized as \"Groceries\"  \n     - Missing receipts or untracked spending  \n\n---  \n\n#### \ud83d\udd0d **Key Observations**  \n- **Sharp Decline in Spending**: June\u2019s total was **\u20b92,140 less** than May (~57% drop).  \n  - Possible causes:  \n    - Changed shopping habits (e.g., fewer bulk purchases).  \n    - Switched to budget-friendly stores (Walmart dominated June).  \n    - May included a large Trader Joe\u2019s haul (\u20b91,429), suggesting a one-time stock-up.  \n\n- **Store Preferences Shifted**:  \n  - **May**: Trader Joe\u2019s (3/4 transactions) + Costco.  \n  - **June**: Walmart (3/4 transactions) + smaller Costco purchase.  \n\n- **Missing July Data**:  \n  - If groceries were bought but not categorized, consider reviewing your expense tracking system.  \n\n---  \n\n#### \ud83d\udca1 **Actionable Insights**  \n1. **Audit July Expenses**:  \n   - Check if groceries were miscategorized (e.g., \"Household\" or \"Essentials\").  \n   - Reconcile receipts or bank statements.  \n\n2. **Budget Adjustments**:  \n   - If June\u2019s lower spending is intentional (e.g., cost-cutting), celebrate!  \n   - If May\u2019s high spend was unusual, exclude it from long-term averages.  \n\n3. **Store Strategy**:  \n   - Walmart purchases in June were smaller but frequent\u2014could this be more cost-effective?  \n   - Compare unit prices between Trader Joe\u2019s, Costco, and Walmart.  \n\n---  \n\n#### \ud83d\udcc8 **Visual Trend Summary**  \n```  \nMay: \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 (\u20b93,744)  \nJune: \u2588\u2588\u2588\u2588\u2588\u2588 (\u20b91,604)  \nJuly: \u2591\u2591\u2591\u2591\u2591 (No data)  \n```  \n\n**Next Steps**:  \n- Clarify July\u2019s missing data.  \n- Set a monthly grocery budget based on June\u2019s pattern (if sustainable).  \n\nLet me know if you\u2019d like a deeper dive into specific stores or spending categories! \ud83d\udecd\ufe0f",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-05 (Category: Groceries):\n- 2025-05-09 | Groceries | \u20b9988.76 | Costco\n- 2025-05-21 | Groceries | \u20b91068.83 | Trader Joe\u2019s\n- 2025-05-13 | Groceries | \u20b9257.23 | Trader Joe\u2019s\n- 2025-05-31 | Groceries | \u20b91429.2 | Trader Joe\u2019s\n\n\ud83d\udcb0 Total: \u20b93744.02",
+          "step_description": "Get grocery expenses for the first month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-05",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-06 (Category: Groceries):\n- 2025-06-15 | Groceries | \u20b91106.34 | Walmart\n- 2025-06-07 | Groceries | \u20b9167.4 | Costco\n- 2025-06-19 | Groceries | \u20b9118.12 | Walmart\n- 2025-06-25 | Groceries | \u20b9212.45 | Walmart\n\n\ud83d\udcb0 Total: \u20b91604.31",
+          "step_description": "Get grocery expenses for the second month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-06",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f No matching category found for 'Groceries'",
+          "step_description": "Get grocery expenses for the third month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-07",
+            "category": "Groceries"
+          }
+        }
+      ],
+      "execution_time": 35.477811,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T20:51:38.575935"
+    },
+    "query_type": "complex",
+    "execution_time": 35.477811
+  },
+  {
+    "id": "conv_6",
+    "session_id": "session_20250617_204928",
+    "timestamp": "2025-06-17T20:53:21.373553",
+    "query": "Compare transportation vs dining",
+    "result": "Here\u2019s a comprehensive breakdown of your **Transportation vs. Dining** expense comparison:\n\n---\n\n### **\ud83d\udd0d Expense Comparison Summary**\n1. **Transportation Expenses**  \n   - \ud83d\udeab *No records found* in the 'Transportation' category.  \n   - This could mean:  \n     - You haven\u2019t logged any transportation-related expenses yet.  \n     - The category might be named differently (e.g., \"Travel,\" \"Fuel,\" \"Rideshare\").  \n\n2. **Dining Expenses**  \n   - \ud83c\udf7d\ufe0f **Total spent:** **\u20b916,839.33**  \n   - This is your *only logged spending* in the 'Dining' category.  \n\n---\n\n### **\ud83d\udcca Key Insights**  \n- **Dining dominates your tracked spending**, while transportation expenses are either missing or uncategorized.  \n- **Actionable steps:**  \n  - Double-check if transportation expenses are logged under a different category.  \n  - If you haven\u2019t spent on transportation lately, this could reflect reduced commuting (e.g., remote work) or alternative travel methods.  \n\n---\n\n### **\ud83d\udca1 Recommendations**  \n- \u2705 **Review your expense categories** to ensure all transactions are properly tagged.  \n- \ud83d\udcc5 **Track transportation separately** (e.g., fuel, public transit) for a clearer comparison next time.  \n- \ud83c\udfaf **Budget adjustment opportunity**: Since dining is your only logged expense, consider setting a monthly limit if needed.  \n\nLet me know if you\u2019d like help refining your categories or analyzing further!",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc2 No expenses found in category 'Transportation'.",
+          "step_description": "Get total transportation expenses",
+          "operation": "sum_category_expenses",
+          "arguments": {
+            "category": "Transportation"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83e\uddfe Total spent on 'Dining': \u20b916839.33",
+          "step_description": "Get total dining expenses",
+          "operation": "sum_category_expenses",
+          "arguments": {
+            "category": "Dining"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f Could not match categories 'Transportation' or 'Dining'",
+          "step_description": "Compare transportation and dining expenses",
+          "operation": "compare_category",
+          "arguments": {
+            "category1": "Transportation",
+            "category2": "Dining"
+          }
+        }
+      ],
+      "execution_time": 23.892668,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T20:53:21.373543"
+    },
+    "query_type": "complex",
+    "execution_time": 23.892668
+  },
+  {
+    "id": "conv_7",
+    "session_id": "session_20250617_204928",
+    "timestamp": "2025-06-17T20:54:35.909595",
+    "query": "Find top 5 expenses and analyze categories",
+    "result": "Here\u2019s your comprehensive expense analysis, combining the available data and insights:\n\n---\n\n### **\ud83d\udd0d Top 5 Expenses Breakdown**  \nHere are your highest single transactions across all categories:  \n1. **Diesel refill** - \u20b91,494.92 (4 Apr 2025) \u26fd  \n2. **Amazon** - \u20b91,494.51 (15 Mar 2025) \ud83d\udce6  \n3. **Flipkart** - \u20b91,481.64 (24 Apr 2025) \ud83d\uded2  \n4. **Doctor visit** - \u20b91,468.91 (28 Mar 2025) \ud83c\udfe5  \n5. **Internet bill** - \u20b91,464.61 (13 Jun 2025) \ud83c\udf10  \n\n\ud83d\udcb0 **Total for top 5 expenses:** \u20b97,404.59  \n\n---\n\n### **\ud83d\udcca Category Analysis**  \n*(Note: Step 2 failed to generate a full category breakdown, but we can infer trends from the top 5.)*  \n\n#### **Observations from Top Expenses:**  \n- **Fuel (Diesel)** and **Healthcare (Doctor visit)** are essential but high-cost categories.  \n- **E-commerce (Amazon, Flipkart)** appears twice, suggesting frequent/recurring discretionary spending.  \n- **Internet** is a fixed utility expense, likely recurring monthly.  \n\n#### **Potential Action Items:**  \n\u2705 **Track e-commerce spending**: Since Amazon/Flipkart appear in the top 5, consider setting monthly limits or reviewing subscriptions.  \n\u2705 **Plan for irregular essentials**: Diesel and healthcare are unpredictable; a small budget buffer could help.  \n\u26a0\ufe0f **Investigate category failure**: The missing category breakdown suggests incomplete data\u2014ensure all expenses are properly tagged for future reports.  \n\n---\n\n### **\ud83d\udccc Key Takeaways**  \n1. Your top expenses are a mix of **essentials (fuel, healthcare, internet)** and **discretionary (e-commerce)**.  \n2. Recurring high costs (e.g., internet) may warrant comparison with alternative providers.  \n3. **Next steps**: Fix category tagging to enable deeper analysis (e.g., \"Is e-commerce dominating overall spending?\").  \n\nLet me know if you\u2019d like help refining the data or diving deeper into specific categories! \ud83d\ude80",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "Top 5 expenses:\n\n1. Diesel refill - \u20b91494.92 (2025-04-04 00:00:00)\n2. Amazon - \u20b91494.51 (2025-03-15 00:00:00)\n3. Flipkart - \u20b91481.64 (2025-04-24 00:00:00)\n4. Doctor visit - \u20b91468.91 (2025-03-28 00:00:00)\n5. Internet - \u20b91464.61 (2025-06-13 00:00:00)\n\n\ud83d\udcb0 Total: \u20b97404.59",
+          "step_description": "Find the top 5 expenses across all categories",
+          "operation": "top_n_expenses",
+          "arguments": {
+            "n": 5
+          }
+        },
+        {
+          "success": false,
+          "result": "\u274c Step execution failed: 1 validation error for category_summary_tool\ncategory\n  Field required [type=missing, input_value={'df':           Date    ...\n[200 rows x 5 columns]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.11/v/missing",
+          "step_description": "Summarize spending by category to analyze patterns"
+        }
+      ],
+      "execution_time": 28.650864,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T20:54:35.909586"
+    },
+    "query_type": "multi_step",
+    "execution_time": 28.650864
+  },
+  {
+    "id": "conv_8",
+    "session_id": "session_20250617_210656",
+    "timestamp": "2025-06-17T21:08:10.450314",
+    "query": "Show grocery trends over 3 months",
+    "result": "### \ud83d\uded2 **Grocery Spending Trends (3-Month Analysis)**  \n\nHere\u2019s a breakdown of your grocery expenses over the past 3 months, along with key insights and actionable takeaways:\n\n---\n\n#### **\ud83d\udcca Monthly Totals & Trends**  \n1. **May 2025**: \u20b93,744.02  \n   - 4 transactions (Costco, Trader Joe\u2019s)  \n   - Highest single purchase: \u20b91,429.20 (Trader Joe\u2019s)  \n\n2. **June 2025**: \u20b91,604.31  \n   - 4 transactions (Walmart, Costco)  \n   - Significant drop (-57%) from May.  \n   - Lowest single purchase: \u20b9118.12 (Walmart)  \n\n3. **July 2025**: *No data*  \n   - \u26a0\ufe0f No transactions categorized as \"Groceries.\"  \n\n---\n\n#### **\ud83d\udd0d Key Observations**  \n- **Sharp Decline in Spending**: June\u2019s total was **57% lower** than May\u2019s. Possible reasons:  \n  - Shift to budget-friendly stores (Walmart vs. Trader Joe\u2019s/Costco).  \n  - Fewer bulk purchases (June\u2019s highest transaction was \u20b91,106 vs. May\u2019s \u20b91,429).  \n- **Missing July Data**:  \n  - Could indicate no grocery spending **or** uncategorized transactions.  \n  - \u2705 *Action*: Review July expenses for misclassified groceries (e.g., \"Food\" or \"Essentials\").  \n\n- **Vendor Patterns**:  \n  - **May**: Heavy reliance on Trader Joe\u2019s (3/4 transactions).  \n  - **June**: Switched to Walmart (3/4 transactions), possibly for lower prices.  \n\n---\n\n#### **\ud83d\udca1 Recommendations**  \n1. **Track Uncategorized Spending**: Check if July groceries were logged under a different category.  \n2. **Budget Adjustments**: If June\u2019s lower spending aligns with goals, consider sticking to Walmart for routine items.  \n3. **Bulk vs. Frequent Purchases**: May\u2019s higher total suggests bulk buying\u2014evaluate if this saves money long-term.  \n\n---\n\n#### **\ud83d\udcc8 Visual Trend (Approximate)**  \n```  \nMay: \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 (\u20b93,744)  \nJune: \u2588\u2588\u2588\u2588 (\u20b91,604)  \nJuly: \u2591\u2591\u2591 (No data)  \n```  \n\nLet me know if you\u2019d like help investigating July\u2019s missing data or refining categories! \ud83d\udecd\ufe0f",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-05 (Category: Groceries):\n- 2025-05-09 | Groceries | \u20b9988.76 | Costco\n- 2025-05-21 | Groceries | \u20b91068.83 | Trader Joe\u2019s\n- 2025-05-13 | Groceries | \u20b9257.23 | Trader Joe\u2019s\n- 2025-05-31 | Groceries | \u20b91429.2 | Trader Joe\u2019s\n\n\ud83d\udcb0 Total: \u20b93744.02",
+          "step_description": "Get grocery expenses for the first month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-05",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-06 (Category: Groceries):\n- 2025-06-15 | Groceries | \u20b91106.34 | Walmart\n- 2025-06-07 | Groceries | \u20b9167.4 | Costco\n- 2025-06-19 | Groceries | \u20b9118.12 | Walmart\n- 2025-06-25 | Groceries | \u20b9212.45 | Walmart\n\n\ud83d\udcb0 Total: \u20b91604.31",
+          "step_description": "Get grocery expenses for the second month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-06",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f No matching category found for 'Groceries'",
+          "step_description": "Get grocery expenses for the third month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-07",
+            "category": "Groceries"
+          }
+        }
+      ],
+      "execution_time": 37.638493,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T21:08:10.450295"
+    },
+    "query_type": "complex",
+    "execution_time": 37.638493
+  },
+  {
+    "id": "conv_9",
+    "session_id": "session_20250617_210656",
+    "timestamp": "2025-06-17T21:09:02.170775",
+    "query": "Compare transportation vs dining",
+    "result": "Here\u2019s a comprehensive breakdown of your **Transportation vs. Dining** expenses analysis:\n\n---\n\n### **\ud83d\ude97 Transportation vs. \ud83c\udf7d\ufe0f Dining Expense Comparison**  \n**Key Findings:**  \n- **No recorded transportation expenses** \ud83d\udcc2: Your expense records show *zero spending* under the 'Transportation' category.  \n- **Significant dining expenses** \ud83e\uddfe: You\u2019ve spent **\u20b916,839.33** on 'Dining', making it the dominant category.  \n\n**Insights & Trends:**  \n\ud83d\udd39 **Dining dominates**: With no transportation expenses logged, dining is your *only active category* in this comparison.  \n\ud83d\udd39 **Potential gaps**: If you expected transportation expenses (e.g., fuel, rideshares), they might be uncategorized or missing from your records.  \n\n**Actionable Steps:**  \n\u2705 **Review expense tracking**: Double-check if transportation costs are labeled under a different category (e.g., 'Travel', 'Fuel').  \n\u2705 **Budget adjustment**: Since dining is your primary outgoing here, consider setting limits or tracking trends over time.  \n\n**Final Verdict:**  \n\ud83c\udf7d\ufe0f **Dining** is your clear spending focus in this dataset\u2014transportation didn\u2019t make the ledger!  \n\n--- \n\nLet me know if you\u2019d like help diving deeper into either category! \ud83d\ude0a",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc2 No expenses found in category 'Transportation'.",
+          "step_description": "Get total transportation expenses",
+          "operation": "sum_category_expenses",
+          "arguments": {
+            "category": "Transportation"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83e\uddfe Total spent on 'Dining': \u20b916839.33",
+          "step_description": "Get total dining expenses",
+          "operation": "sum_category_expenses",
+          "arguments": {
+            "category": "Dining"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f Could not match categories 'Transportation' or 'Dining'",
+          "step_description": "Compare transportation and dining expenses",
+          "operation": "compare_category",
+          "arguments": {
+            "category1": "Transportation",
+            "category2": "Dining"
+          }
+        }
+      ],
+      "execution_time": 26.603306,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T21:09:02.170766"
+    },
+    "query_type": "complex",
+    "execution_time": 26.603306
+  },
+  {
+    "id": "conv_10",
+    "session_id": "session_20250617_210656",
+    "timestamp": "2025-06-17T21:09:58.842621",
+    "query": "Compare transportation vs dining",
+    "result": "Here\u2019s a comprehensive breakdown of your **Transportation vs. Dining** expenses:\n\n---\n\n### **\ud83d\udd0d Expense Comparison Summary**\n1. **Transportation**  \n   - \ud83d\udeab *No expenses found* in this category.  \n   - This could mean:  \n     - You haven\u2019t logged any transportation-related spending (e.g., fuel, rideshares, public transit).  \n     - Expenses might be categorized under a different label (e.g., \"Travel\" or \"Commute\").  \n\n2. **Dining**  \n   - \ud83c\udf7d\ufe0f **Total spent:** **\u20b916,839.33**  \n   - This is your *only logged spending* in these two categories, making it the clear \"winner\" in this comparison.  \n\n---\n\n### **\ud83d\udcca Key Insights**  \n- **Dining dominates** your expenses, while transportation appears inactive or unrecorded.  \n- If you *expected* transportation expenses, consider:  \n  - \ud83d\udee0\ufe0f Reviewing other categories for misclassified spending.  \n  - \ud83d\udcc5 Logging future transportation costs to track this budget area.  \n\n---\n\n### **\ud83d\udca1 Actionable Tips**  \n- **For Dining:**  \n  - If this seems high, try setting a monthly limit (e.g., \u20b910,000) or cooking more meals at home.  \n- **For Transportation:**  \n  - Start tracking costs like fuel or metro cards to get a full picture of your spending habits.  \n\n---\n\n### **\ud83c\udfaf Final Verdict**  \n\u2705 **Dining** is your only significant expense here. Transportation needs attention\u2014either it\u2019s untracked or genuinely $0.  \n\nLet me know if you\u2019d like help refining categories or setting budgets! \ud83d\ude80",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc2 No expenses found in category 'Transportation'.",
+          "step_description": "Get total transportation expenses",
+          "operation": "sum_category_expenses",
+          "arguments": {
+            "category": "Transportation"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83e\uddfe Total spent on 'Dining': \u20b916839.33",
+          "step_description": "Get total dining expenses",
+          "operation": "sum_category_expenses",
+          "arguments": {
+            "category": "Dining"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f Could not match categories 'Transportation' or 'Dining'",
+          "step_description": "Compare transportation and dining expenses",
+          "operation": "compare_category",
+          "arguments": {
+            "category1": "Transportation",
+            "category2": "Dining"
+          }
+        }
+      ],
+      "execution_time": 30.542974,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T21:09:58.842612"
+    },
+    "query_type": "complex",
+    "execution_time": 30.542974
+  },
+  {
+    "id": "conv_11",
+    "session_id": "session_20250617_211500",
+    "timestamp": "2025-06-17T21:16:10.242402",
+    "query": "Show grocery trends over 3 months",
+    "result": "### \ud83d\uded2 **Grocery Spending Trends (3-Month Analysis)**  \n\nHere\u2019s a breakdown of your grocery expenses over the past 3 months, along with key insights and actionable takeaways:\n\n---\n\n#### \ud83d\udcca **Monthly Totals**  \n- **May 2025**: \u20b93,744.02  \n  - 4 transactions (Costco, Trader Joe\u2019s)  \n  - Highest single purchase: \u20b91,429.20 (Trader Joe\u2019s)  \n- **June 2025**: \u20b91,604.31  \n  - 4 transactions (Walmart, Costco)  \n  - Highest single purchase: \u20b91,106.34 (Walmart)  \n- **July 2025**: *No data*  \n  - \u26a0\ufe0f No transactions categorized as \"Groceries\"  \n\n---\n\n#### \ud83d\udd0d **Key Trends & Observations**  \n1. **Sharp Decline in Spending**  \n   - May \u2192 June: **57% drop** (\u20b93,744 \u2192 \u20b91,604).  \n   - Possible reasons:  \n     - Shift to lower-cost retailers (Walmart vs. Trader Joe\u2019s/Costco).  \n     - Fewer bulk purchases (June\u2019s highest transaction was ~\u20b91,100 vs. May\u2019s ~\u20b91,430).  \n\n2. **Retailer Preferences Changed**  \n   - **May**: Heavy reliance on Trader Joe\u2019s (3/4 transactions).  \n   - **June**: Switched to Walmart (3/4 transactions).  \n\n3. **Missing July Data**  \n   - Could mean:  \n     - No grocery spending (unlikely).  \n     - Transactions miscategorized (check tags/filters).  \n\n---\n\n#### \ud83d\udca1 **Actionable Insights**  \n- **Review July Expenses**: Ensure \"Groceries\" category is applied correctly.  \n- **Compare Retailer Costs**: Walmart seems cheaper\u2014consider sticking with it if budgeting is a priority.  \n- **Plan Bulk Purchases**: May\u2019s higher total might reflect stocking up; align with needs to avoid overspending.  \n\n---\n\n#### \ud83d\udccc **Final Thoughts**  \nYour grocery spending dropped significantly after May, likely due to retailer changes. July\u2019s missing data needs verification\u2014adjust categories if needed. If you\u2019d like to dive deeper into *why* spending shifted, we can analyze receipts or budget goals!  \n\nLet me know how you\u2019d like to proceed. \ud83d\ude0a",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-05 (Category: Groceries):\n- 2025-05-09 | Groceries | \u20b9988.76 | Costco\n- 2025-05-21 | Groceries | \u20b91068.83 | Trader Joe\u2019s\n- 2025-05-13 | Groceries | \u20b9257.23 | Trader Joe\u2019s\n- 2025-05-31 | Groceries | \u20b91429.2 | Trader Joe\u2019s\n\n\ud83d\udcb0 Total: \u20b93744.02",
+          "step_description": "Get grocery expenses for the first month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-05",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-06 (Category: Groceries):\n- 2025-06-15 | Groceries | \u20b91106.34 | Walmart\n- 2025-06-07 | Groceries | \u20b9167.4 | Costco\n- 2025-06-19 | Groceries | \u20b9118.12 | Walmart\n- 2025-06-25 | Groceries | \u20b9212.45 | Walmart\n\n\ud83d\udcb0 Total: \u20b91604.31",
+          "step_description": "Get grocery expenses for the second month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-06",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f No matching category found for 'Groceries'",
+          "step_description": "Get grocery expenses for the third month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-07",
+            "category": "Groceries"
+          }
+        }
+      ],
+      "execution_time": 39.070006,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T21:16:10.242381"
+    },
+    "query_type": "complex",
+    "execution_time": 39.070006
+  },
+  {
+    "id": "conv_12",
+    "session_id": "session_20250617_212159",
+    "timestamp": "2025-06-17T21:22:49.863552",
+    "query": "Show grocery trends over 3 months",
+    "result": "### \ud83d\uded2 **Grocery Spending Trends (3-Month Analysis)**  \n\nHere\u2019s a breakdown of your grocery expenses over the past 3 months, along with key insights and actionable takeaways:\n\n---\n\n#### \ud83d\udcca **Monthly Totals & Trends**  \n1. **May 2025**: \u20b93,744.02  \n   - 4 transactions (Costco, Trader Joe\u2019s)  \n   - Highest single purchase: \u20b91,429.20 (Trader Joe\u2019s)  \n   - **Peak spending month**  \n\n2. **June 2025**: \u20b91,604.31  \n   - 4 transactions (Walmart, Costco)  \n   - Lowest single purchase: \u20b9118.12 (Walmart)  \n   - **57% decrease** from May  \n\n3. **July 2025**: No data found  \n   - Possible reasons:  \n     - No transactions categorized as \"Groceries.\"  \n     - Missing receipts or misclassified spending.  \n\n---\n\n#### \ud83d\udd0d **Key Observations**  \n- **Sharp Drop in Spending**: June\u2019s total was **less than half** of May\u2019s.  \n  - Potential causes: Changed shopping habits, fewer bulk purchases, or switched to budget retailers (e.g., Walmart dominated June).  \n- **Vendor Shift**:  \n  - May: Heavy reliance on Trader Joe\u2019s (3/4 transactions).  \n  - June: Mostly Walmart (3/4 transactions), suggesting a focus on affordability.  \n- **Missing July Data**: Recommend verifying if expenses were logged under a different category (e.g., \"Household\").  \n\n---\n\n#### \ud83d\udca1 **Actionable Insights**  \n1. **Review July Expenses**:  \n   - Check for uncategorized transactions or alternate labels (e.g., \"Essentials\").  \n2. **Budget Adjustment**:  \n   - If June\u2019s lower spending aligns with goals, consider capping groceries at ~\u20b91,600/month.  \n3. **Vendor Impact**:  \n   - Walmart purchases were smaller but more frequent\u2014could indicate better budget control.  \n\n---\n\n#### \ud83d\udccc **Next Steps**  \n- **Track July**: Reconcile missing data to complete the 3-month picture.  \n- **Compare Categories**: If groceries were split (e.g., \"Dining\" vs. \"Groceries\"), merge for accuracy.  \n\nLet me know if you\u2019d like help diving deeper into any month! \ud83d\ude80",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-05 (Category: Groceries):\n- 2025-05-09 | Groceries | \u20b9988.76 | Costco\n- 2025-05-21 | Groceries | \u20b91068.83 | Trader Joe\u2019s\n- 2025-05-13 | Groceries | \u20b9257.23 | Trader Joe\u2019s\n- 2025-05-31 | Groceries | \u20b91429.2 | Trader Joe\u2019s\n\n\ud83d\udcb0 Total: \u20b93744.02",
+          "step_description": "Get grocery expenses for the first month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-05",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-06 (Category: Groceries):\n- 2025-06-15 | Groceries | \u20b91106.34 | Walmart\n- 2025-06-07 | Groceries | \u20b9167.4 | Costco\n- 2025-06-19 | Groceries | \u20b9118.12 | Walmart\n- 2025-06-25 | Groceries | \u20b9212.45 | Walmart\n\n\ud83d\udcb0 Total: \u20b91604.31",
+          "step_description": "Get grocery expenses for the second month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-06",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f No matching category found for 'Groceries'",
+          "step_description": "Get grocery expenses for the third month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-07",
+            "category": "Groceries"
+          }
+        }
+      ],
+      "execution_time": 31.127859,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T21:22:49.863529"
+    },
+    "query_type": "complex",
+    "execution_time": 31.127859
+  },
+  {
+    "id": "conv_13",
+    "session_id": "session_20250617_212159",
+    "timestamp": "2025-06-17T21:24:04.408604",
+    "query": "How much i spent on rent in march",
+    "result": "\ud83d\udcc6 Expenses in 2025-03 (Category: Rent):\n- 2025-03-05 | Rent | \u20b91349.2 | Deposit\n- 2025-03-22 | Rent | \u20b9966.15 | Monthly rent\n- 2025-03-07 | Rent | \u20b9635.67 | Deposit\n- 2025-03-11 | Rent | \u20b9260.18 | Monthly rent\n\n\ud83d\udcb0 Total: \u20b93211.20",
+    "metadata": {
+      "is_multi_step": false,
+      "step_results": [],
+      "execution_time": 10.814263,
+      "invoked_tool": "monthly_expenses_tool",
+      "query_timestamp": "2025-06-17T21:24:04.408578"
+    },
+    "query_type": "simple",
+    "execution_time": 10.814263
+  },
+  {
+    "id": "conv_14",
+    "session_id": "session_20250617_213109",
+    "timestamp": "2025-06-17T21:33:09.341204",
+    "query": "Show my top 3 expences?\n",
+    "result": "Top 3 expenses:\n\n1. Diesel refill - \u20b91494.92 (2025-04-04 00:00:00)\n2. Amazon - \u20b91494.51 (2025-03-15 00:00:00)\n3. Flipkart - \u20b91481.64 (2025-04-24 00:00:00)\n\n\ud83d\udcb0 Total: \u20b94471.07",
+    "metadata": {
+      "is_multi_step": false,
+      "step_results": [],
+      "execution_time": 9.966707,
+      "invoked_tool": "top_expenses_tool",
+      "query_timestamp": "2025-06-17T21:33:09.341194"
+    },
+    "query_type": "simple",
+    "execution_time": 9.966707
+  },
+  {
+    "id": "conv_15",
+    "session_id": "session_20250617_213109",
+    "timestamp": "2025-06-17T21:35:21.406967",
+    "query": "How much total i spent on subscriptions?\n",
+    "result": "\ud83e\uddfe Total spent on 'Subscriptions': \u20b914447.90",
+    "metadata": {
+      "is_multi_step": false,
+      "step_results": [],
+      "execution_time": 12.027934,
+      "invoked_tool": "sum_category_expenses_tool",
+      "query_timestamp": "2025-06-17T21:35:21.406949"
+    },
+    "query_type": "simple",
+    "execution_time": 12.027934
+  }
+]
