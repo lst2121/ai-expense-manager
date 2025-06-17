@@ -22,11 +22,12 @@ sample_df = pd.DataFrame(data)
 
 # Test prompts
 queries = [
-    "Compare May and June spending.",
+    "Compare May and June spending",
     "Compare shopping between May and June",
     "How much did I spend on groceries in May?",
     "How much did I spend in June?",
     "Summarize my past spending",
+    "How much did I spend on groceries in May?",
     "And in June?",
     "What about subscriptions?",
 ]
@@ -52,7 +53,7 @@ for query in queries:
         print(f"\n❌ Error: {e}")
         continue
 
-    # ✅ Update memory for next query
+    # ✅ Update memory
     memory = output.get("memory", memory)
 
     result = output.get("result", "❌ No result returned")
@@ -60,14 +61,21 @@ for query in queries:
     tool_input = output.get("tool_input", {})
 
     print("\n✅ Result:")
-    print(result)
+    if isinstance(result, dict) and "text" in result:
+        print(result["text"])
+        if "chart" in result and result["chart"]:
+            print("🖼️ Chart Preview: (base64 truncated)")
+            print(result["chart"][:80] + "...")  # Show only first 80 chars
+    else:
+        print(result)
 
     print("\n🔧 Tool Used:", tool_used)
     print("🧾 Tool Input:", tool_input)
+    print("-" * 60)
 
-    print("\n" + "-" * 60)
-
-# ✅ Show final memory summary at the end
+# ✅ Final memory summary
 print("\n🧠 Final Memory State:")
 for i, entry in enumerate(memory):
     print(f"{i+1}. {entry['query']} → {entry['result']}")
+    if entry.get("chart"):
+        print(f"   🖼️ Chart present (base64 size: {len(entry['chart'])})")

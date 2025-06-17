@@ -13,18 +13,23 @@ OPERATION_TO_TOOL = {
     "sum_category_expenses": "sum_category_expenses_tool",
     "date_range_expense": "date_range_expense_tool",
     "summarize_memory": "summarize_memory_tool",
-     "compare_months": "compare_months_tool",
+    "compare_months": "compare_months_tool",
+    "compare_category": "compare_category_tool",
+    "average_category_expense": "average_category_expense_tool",
+    "category_summary": "category_summary_tool",  # ✅ NEW
 }
 
 llm = ChatDeepSeek(
     temperature=config.TEMPERATURE,
     model=config.DEEPSEEK_MODEL_NAME,
-    api_key=SecretStr(config.DEEPSEEK_API_KEY),
+    api_key=SecretStr(config.DEEPSEEK_API_KEY or ""),
     base_url=config.BASE_URL
 )
 
 SYSTEM_PROMPT = """
 You are an AI assistant helping to extract structured tool instructions from a user's expense-related query.
+
+IMPORTANT: You MUST return ONLY a Python dictionary as JSON - no explanations, no comments, no additional text.
 
 You MUST return a Python dictionary with keys depending on the operation:
 
@@ -39,7 +44,7 @@ Operations:
 
 3. "sum_category_expenses"
     - category: required (e.g., "Healthcare", "Groceries")
-    
+
 4. "date_range_expense"
     - category: optional
     - start_date: required (format: YYYY-MM-DD)
@@ -53,6 +58,19 @@ Operations:
     - month2: required (e.g., "2025-06")
     - category: optional (e.g., "Shopping")
 
+7. "compare_category"
+    - category1: required (e.g., "Food")
+    - category2: required (e.g., "Transport")
+    - months: optional list of months (e.g., ["2025-05", "2025-06"])
+
+8. "average_category_expense"
+    - category: required (e.g., "Rent")
+    - months: optional list of months (e.g., ["2025-05", "2025-06"])
+
+9. "category_summary"
+    - category: required (e.g., "Groceries")
+    - months: optional list of months (e.g., ["2025-05", "2025-06"])
+
 Examples:
 User: Show expenses for June 2025
 -> {"operation": "list_month_expenses", "month": "2025-06"}
@@ -65,6 +83,15 @@ User: What did I spend most on?
 
 User: How much did I spend on healthcare?
 -> {"operation": "sum_category_expenses", "category": "Healthcare"}
+
+User: What is the total I spent on rent?
+-> {"operation": "sum_category_expenses", "category": "Rent"}
+
+User: What’s the summary of shopping this year?
+-> {"operation": "category_summary", "category": "Shopping"}
+
+User: Show detailed summary of groceries in May and June
+-> {"operation": "category_summary", "category": "Groceries", "months": ["2025-05", "2025-06"]}
 
 User: How much did I spend between 2025-05-01 and 2025-06-10 on subscription?
 -> {"operation": "date_range_expense", "category": "Subscriptions", "start_date": "2025-05-01", "end_date": "2025-06-10"}
@@ -81,19 +108,44 @@ User: Summarize my past spending
 User: Compare May and June spending
 -> {"operation": "compare_months", "month1": "2025-05", "month2": "2025-06"}
 
+User: Compare food vs transport in May and June
+-> {"operation": "compare_category", "category1": "Food", "category2": "Transport", "months": ["2025-05", "2025-06"]}
 
+User: What is the average rent I paid in last two months?
+-> {"operation": "average_category_expense", "category": "Rent", "months": ["2025-05", "2025-06"]}
 """
 
 def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    query = state["query"]
+    query = state.get("query", "")
+    if not query:
+        return {
+            **state,
+            "result": "❌ Missing query input.",
+            "tool_input": None,
+            "invoked_tool": "None"
+        }
+    
     prompt = f"{SYSTEM_PROMPT}\n\nUser: {query}\n->"
 
     try:
         response = llm.invoke(prompt)
-        content = response.content if hasattr(response, "content") else str(response)
+        content = str(response.content if hasattr(response, "content") else response)
         print(f"\n🧠 LLM RESPONSE: {content}")  # Debug log
 
-        parsed = json.loads(content.strip())
+        # ✅ Strip code block markers if present
+        content = content.strip()
+        if content.startswith("```python"):
+            content = content[9:]  # Remove ```python
+        elif content.startswith("```json"):
+            content = content[7:]   # Remove ```json
+        elif content.startswith("```"):
+            content = content[3:]   # Remove ```
+        if content.endswith("```"):
+            content = content[:-3]  # Remove trailing ```
+        
+        content = content.strip()
+        
+        parsed = json.loads(content)
         operation = parsed.get("operation")
 
         if not operation or operation not in OPERATION_TO_TOOL:
@@ -106,9 +158,33 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
         arguments = {k: v for k, v in parsed.items() if k != "operation"}
 
-        # ✅ Normalize time period using shared utility
-        if operation == "list_month_expenses" and "month" in arguments:
-            arguments["month"] = resolve_time_period(arguments["month"])
+        # Normalize time arguments for all relevant operations
+        time_keys = []
+        if operation == "list_month_expenses":
+            time_keys = ["month"]
+        elif operation in ["compare_category", "average_category_expense", "category_summary"]:
+            time_keys = ["months"]
+        elif operation == "compare_months":
+            time_keys = ["month1", "month2"]
+        elif operation == "date_range_expense":
+            time_keys = []  # full dates handled separately
+
+        for key in time_keys:
+            if key in arguments and arguments[key]:
+                if isinstance(arguments[key], list):
+                    resolved_list = []
+                    for val in arguments[key]:
+                        resolved = resolve_time_period(val)
+                        if resolved:
+                            if isinstance(resolved, list):
+                                resolved_list.extend(resolved)
+                            else:
+                                resolved_list.append(resolved)
+                    arguments[key] = resolved_list
+                else:
+                    resolved = resolve_time_period(arguments[key])
+                    if resolved:
+                        arguments[key] = resolved
 
         tool_input = {
             "tool_name": OPERATION_TO_TOOL[operation],
@@ -131,4 +207,4 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
             "invoked_tool": "None"
         }
 
-rewrite_agent_node = RunnableLambda(rewrite_agent_node)
+rewrite_agent_runnable = RunnableLambda(rewrite_agent_node)

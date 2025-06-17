@@ -8,6 +8,11 @@ from tools.sum_category_expenses_tool import sum_category_expenses_tool
 from tools.date_range_expense_tool import date_range_expense_tool
 from tools.summarize_memory_tool import summarize_memory_tool
 from tools.compare_months_tool import compare_months_tool
+from tools.compare_category_tool import compare_category_tool
+from tools.average_category_expense_tool import average_category_expense_tool
+from tools.category_summary_tool import category_summary_tool
+from expense_manager.utils.autofill_helpers import autofill_compare_months_args
+
 import pandas as pd
 
 # Sample dataframe (for test mode)
@@ -21,7 +26,7 @@ df = pd.DataFrame(data)
 
 # Tool map
 TOOL_REGISTRY = {
-    # "query_tool": query_tool,
+    "query_tool": query_tool,
     "fallback_tool": fallback_tool,
     "top_expenses_tool": top_expenses_tool,
     "monthly_expenses_tool": monthly_expenses_tool,
@@ -29,7 +34,26 @@ TOOL_REGISTRY = {
     "date_range_expense_tool": date_range_expense_tool,
     "summarize_memory_tool": summarize_memory_tool,
     "compare_months_tool": compare_months_tool,
+    "compare_category_tool": compare_category_tool,
+    "average_category_expense_tool": average_category_expense_tool,
+    "category_summary_tool": category_summary_tool,  # ✅ NEW TOOL
 }
+
+# Optional operation-to-tool mapping
+OPERATION_TO_TOOL = {
+    "compare_months": "compare_months_tool",
+    "sum_category_expenses": "sum_category_expenses_tool",
+    "monthly_expenses": "monthly_expenses_tool",
+    "top_expenses": "top_expenses_tool",
+    "summarize_memory": "summarize_memory_tool",
+    "query": "query_tool",
+    "fallback": "fallback_tool",
+    "date_range_expense": "date_range_expense_tool",
+    "compare_category": "compare_category_tool",
+    "average_category_expense": "average_category_expense_tool",
+    "category_summary": "category_summary_tool",  # ✅ NEW MAPPING
+}
+
 
 def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     tool_input = state.get("tool_input")
@@ -42,19 +66,28 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     tool_name = tool_input.get("tool_name")
     arguments = tool_input.get("arguments", {})
+    operation = tool_input.get("operation")
 
-    # ✅ Inject df for all tools except memory-only ones
+    # 🧠 If tool_name is missing, try resolving from operation
+    if not tool_name and operation:
+        tool_name = OPERATION_TO_TOOL.get(operation)
+
+    # ✅ Inject df if tool likely uses it
     if tool_name != "summarize_memory_tool":
         arguments["df"] = state.get("df")
 
-    # ✅ Inject memory only for summarize tool
+    # 🧠 Autofill for compare_months_tool if operation matches or tool name is set
+    if operation == "compare_months" or tool_name == "compare_months_tool":
+        arguments = autofill_compare_months_args(arguments)
+
+    # ✅ Inject memory if tool uses memory
     if tool_name == "summarize_memory_tool":
         arguments["memory"] = state.get("memory", [])
 
     if not tool_name or tool_name not in TOOL_REGISTRY:
         return {
             **state,
-            "result": f"❌ Unknown tool: {tool_name}",
+            "result": f"❌ Unknown or missing tool: `{tool_name or operation or 'None'}`",
             "invoked_tool": tool_name or "None"
         }
 
@@ -64,7 +97,10 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         tool = TOOL_REGISTRY[tool_name]
         result = tool.invoke(arguments)
 
-        # ✅ Clean memory entry, excluding df/memory
+        # ✅ If dict with "text", use it. Otherwise, fallback.
+        text_result = result.get("text", result) if isinstance(result, dict) else result
+
+        # ✅ Append to memory
         memory_entry = {
             "query": state["query"],
             "tool_name": tool_name,
@@ -72,7 +108,7 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
                 k: v for k, v in arguments.items()
                 if k not in ["df", "memory"]
             },
-            "result": result
+            "answer": text_result
         }
 
         memory = state.get("memory", [])
@@ -80,10 +116,11 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
         return {
             **state,
-            "result": result,
+            "result": text_result,
             "invoked_tool": tool_name,
             "memory": memory,
         }
+
     except Exception as e:
         return {
             **state,

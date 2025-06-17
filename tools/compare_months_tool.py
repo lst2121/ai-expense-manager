@@ -1,4 +1,7 @@
-from typing import TypedDict, Optional
+# tools/compare_months_tool.py
+
+from typing_extensions import TypedDict
+from typing import Optional
 import pandas as pd
 from langchain_core.tools import tool
 from tools.utils import parse_month_string, fuzzy_match_category
@@ -10,6 +13,7 @@ class CompareMonthsInput(TypedDict):
     month2: str
     category: Optional[str]
 
+# --- Main Tool ---
 @tool
 def compare_months_tool(
     df: pd.DataFrame,
@@ -20,42 +24,52 @@ def compare_months_tool(
     """
     📊 Compare Months Tool
 
-    Compares expenses between two months (optionally filtered by category).
-    Accepts flexible month formats like "June 2025", "2025-06", etc.
+    Compares total spending between two months.
+    Optionally filters by category.
+
+    Parameters:
+    - df (pd.DataFrame)
+    - month1 (str): e.g. "2025-05"
+    - month2 (str): e.g. "2025-06"
+    - category (str, optional)
+
+    Returns:
+    - str: Text summary of comparison
     """
-
     try:
-        m1 = parse_month_string(month1)
-        m2 = parse_month_string(month2)
-        if not m1 or not m2:
-            return f"⚠️ Could not parse one of the months: '{month1}', '{month2}'"
+        parsed1 = parse_month_string(month1)
+        parsed2 = parse_month_string(month2)
 
-        df["Date"] = df["Date"].astype(str)
+        if not parsed1 or not parsed2:
+            return "⚠️ Could not parse one of the months."
 
-        df1 = df[df["Date"].str.startswith(m1)]
-        df2 = df[df["Date"].str.startswith(m2)]
+        data = df.copy()
+        data["Date"] = data["Date"].astype(str)
 
-        cat_label = ""
+        # Optional category filtering
+        matched = None
         if category:
-            matched = fuzzy_match_category(category, df["Category"].unique().tolist())
+            matched = fuzzy_match_category(category, data["Category"].unique().tolist())
             if not matched:
                 return f"⚠️ No matching category found for '{category}'"
-            df1 = df1[df1["Category"] == matched]
-            df2 = df2[df2["Category"] == matched]
-            cat_label = f" in category '{matched}'"
+            data = data[data["Category"] == matched]
 
-        total1 = df1["Amount"].sum()
-        total2 = df2["Amount"].sum()
-        delta = total2 - total1
+        # Compare totals
+        sum1 = data[data["Date"].str.startswith(parsed1)]["Amount"].sum()
+        sum2 = data[data["Date"].str.startswith(parsed2)]["Amount"].sum()
+        diff = sum2 - sum1
+        trend = "📈 increase" if diff > 0 else "📉 decrease" if diff < 0 else "➖ no change"
 
-        trend = "📈 increase" if delta > 0 else "📉 decrease" if delta < 0 else "➖ no change"
+        title = f"📊 Comparison of {parsed1} vs {parsed2}"
+        if matched:
+            title += f" in category '{matched}'"
 
-        summary = f"📊 Comparison of {m1} vs {m2}{cat_label}:\n"
-        summary += f"• {m1}: ₹{total1:.2f}\n"
-        summary += f"• {m2}: ₹{total2:.2f}\n"
-        summary += f"• Difference: ₹{abs(delta):.2f} → {trend}\n"
-
-        return summary
+        return (
+            f"{title}:\n"
+            f"• {parsed1}: ₹{sum1:.2f}\n"
+            f"• {parsed2}: ₹{sum2:.2f}\n"
+            f"• Difference: ₹{abs(diff):.2f} → {trend}"
+        )
 
     except Exception as e:
-        return f"❌ Error in compare_months_tool: {str(e)}"
+        return f"❌ Error: {str(e)}"

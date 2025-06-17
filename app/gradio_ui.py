@@ -1,102 +1,121 @@
-# app/gradio_ui.py
-
 import gradio as gr
-import os
-
-from expense_manager.vector_store.vector_db import VectorDB
-from expense_manager.chains.expense_chain import create_expense_chain
-from expense_manager.vector_store.retriever_chain import create_retriever_chain
+import pandas as pd
+from datetime import datetime
 from expense_manager.utils.csv_loader import load_and_prepare_csv
+from expense_manager.memory_system import memory_system
+from app.memory_ui_components import (
+    generate_memory_display, 
+    export_memory_handler, 
+    clear_memory_handler,
+    search_memory_handler
+)
+from langgraph_app.graph import expense_analysis_app
 
-# Global objects
-retriever_chain = None
+### 🔧 Utility: Generate Memory Markdown ###
+def generate_memory_markdown(memory: list) -> str:
+    if not memory:
+        return "_No memory yet._"
+    md = "<details><summary>🧠 Memory (click to expand)</summary>\n\n"
+    for i, item in enumerate(memory[-5:]):  # Show last 5
+        query = item.get("query", "N/A")
+        answer = item.get("answer", "N/A")
+        md += f"**Q{i+1}:** {query}\n\n"
+        md += f"**A{i+1}:** {answer}\n\n---\n"
+    md += "</details>"
+    return md
 
-# Step 0: Try to load existing vector DB
-persist_path = "vector_store/faiss_index"
-def try_load_existing_vector_db():
-    global retriever_chain
-    try:
-        vdb = VectorDB(persist_path=persist_path)
-        if not os.path.exists(persist_path):
-            return None, None, None
+### 🔄 File Upload Handler ###
+def handle_file_upload(file_obj) -> tuple[dict, gr.Dataframe]:
+    if file_obj is None:
+        return {"df": pd.DataFrame(), "memory": []}, gr.Dataframe(value=pd.DataFrame())
+    df = load_and_prepare_csv(file_obj.name)
+    return {"df": df, "memory": []}, gr.Dataframe(value=df)
 
-        vdb.load()
-        llm = create_expense_chain().llm
-        retriever = vdb.get_vectorstore()
-        retriever_chain = create_retriever_chain(llm=llm, retriever=retriever)
+### 🤖 Main Assistant Logic ###
+def run_expense_assistant(query, state: dict) -> tuple[str, str, dict, str]:
+    df = state.get("df", pd.DataFrame())
+    memory = state.get("memory", [])
 
-        return None, None, "✅ Loaded default data from existing vector store."
+    result = expense_analysis_app.invoke({"query": query, "df": df})
+    answer = result.get("result", result.get("answer", "Sorry, I couldn’t understand."))
 
-    except Exception as e:
-        print("Failed to auto-load vector store:", e)
-        return None, None, "❌ Failed to auto-load vector store. Please upload CSV."
+    memory.append({"query": query, "answer": answer})
+    memory_md = generate_memory_markdown(memory)
 
-# Step 1: Define function to handle file upload
-def handle_file_upload(file_obj):
-    global retriever_chain
+    # Clear the query after submission
+    return answer, memory_md, {"df": df, "memory": memory}, ""
 
-    if not file_obj:
-        return "❌ Please upload a valid CSV file.", "", gr.update(visible=False)
+### 🚀 UI Setup ###
+with gr.Blocks(
+    css="""
+    .suggestion-button {
+        font-size: 0.85rem !important;
+    }
+    #memory-box {
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+        border-radius: 8px;
+        background-color: #f8f8f8;
+    }
+    """
+) as demo:
 
-    try:
-        df = load_and_prepare_csv(file_obj.name)
-        vdb = VectorDB(persist_path=persist_path)
-        vdb.create_from_dataframe(df)
-        vdb.load()
+    state = gr.State({"df": pd.DataFrame(), "memory": []})
 
-        llm = create_expense_chain().llm
-        retriever = vdb.get_vectorstore()
-        retriever_chain = create_retriever_chain(llm=llm, retriever=retriever)
-
-        return "✅ File uploaded and processed. Ask your question below.", "", gr.update(visible=True)
-
-    except Exception as e:
-        return f"❌ Failed to process file: {str(e)}", "", gr.update(visible=False)
-
-# Step 2: Answer user questions
-def answer_question(query):
-    if retriever_chain is None:
-        return "❌ Please upload a CSV file first.", ""
-
-    try:
-        result = retriever_chain(query)
-        answer = result.get('result', "No answer found.")
-        sources = "\n\n".join([doc.page_content for doc in result.get("source_documents", [])])
-        return answer, sources if sources else "No source documents found."
-
-    except Exception as e:
-        return f"❌ Error: {str(e)}", ""
-
-# Step 3: Gradio UI layout
-with gr.Blocks() as ui:
-    gr.Markdown("## 💸 AI Expense Assistant\nUpload your expense CSV file and ask questions about it!")
+    gr.Markdown("## 💸 AI Expense Assistant")
 
     with gr.Row():
-        file_input = gr.File(label="📄 Upload your CSV file", file_types=[".csv"])
-        upload_btn = gr.Button("📤 Upload and Process")
+        query = gr.Textbox(label="Ask a question", placeholder="e.g. my spendings on groceries in May?")
+        submit_btn = gr.Button("🔍 Analyze")
 
-    status = gr.Textbox(label="Status", interactive=False)
+    with gr.Row():
+        output = gr.Textbox(label="📢 Assistant Response")
+        output_memory = gr.Markdown(elem_id="memory-box")
 
-    question_input = gr.Textbox(label="Enter your question", placeholder="e.g., What were my top 3 expenses?", visible=False)
-    question_btn = gr.Button("Ask")
-    answer_output = gr.Textbox(label="Answer")
-    sources_output = gr.Textbox(label="Source Documents", lines=6)
 
-    upload_btn.click(fn=handle_file_upload, inputs=[file_input], 
-                     outputs=[status, answer_output, question_input])
+    ### 📁 File Upload ###
+    file_input = gr.File(label="📁 Upload Expense CSV", file_types=[".csv"])
+    file_input.upload(fn=handle_file_upload, inputs=[file_input], outputs=[state, output])
 
-    # Trigger Q&A via both Enter and button click
-    question_input.submit(fn=answer_question, inputs=question_input, 
-                          outputs=[answer_output, sources_output])
-    question_btn.click(fn=answer_question, inputs=question_input, 
-                       outputs=[answer_output, sources_output])
+    ### 🚀 Main Interaction ###
+    submit_btn.click(
+        fn=run_expense_assistant,
+        inputs=[query, state],
+        outputs=[output, output_memory, state, query],
+        show_progress="full",
+        scroll_to_output=True
+    )
 
-    # Try to load default data from persisted vector DB
-    _, _, default_status = try_load_existing_vector_db()
-    if default_status:
-        status.value = default_status
-        question_input.visible = True
+    # ✅ Also trigger on Enter key
+    query.submit(
+        fn=run_expense_assistant,
+        inputs=[query, state],
+        outputs=[output, output_memory, state, query],
+        show_progress="full",
+        scroll_to_output=True
+    )
 
-# Step 4: Run app
-if __name__ == "__main__":
-    ui.launch()
+    ### 🧠 Auto-suggested Questions ###
+    gr.Markdown("#### 💡 Try one of these:")
+    suggestions = [
+        "Compare May and June spending",
+        # "Show average spending by category",
+        # "Which month had highest grocery expense?"
+        "How much did I spend in June?",
+        # "Summarize my past spending",
+        "And in April?",
+        "What about subscriptions?"
+    ]
+
+    for q in suggestions:
+        gr.Button(q, elem_classes="suggestion-button").click(
+            fn=lambda state, q=q: run_expense_assistant(q, state),
+            inputs=[state],
+            outputs=[output, output_memory, state, query],
+            show_progress="full",
+            scroll_to_output=True
+        )
+
+demo.launch()
