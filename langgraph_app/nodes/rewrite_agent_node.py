@@ -22,12 +22,14 @@ OPERATION_TO_TOOL = {
 llm = ChatDeepSeek(
     temperature=config.TEMPERATURE,
     model=config.DEEPSEEK_MODEL_NAME,
-    api_key=SecretStr(config.DEEPSEEK_API_KEY),
+    api_key=SecretStr(config.DEEPSEEK_API_KEY or ""),
     base_url=config.BASE_URL
 )
 
 SYSTEM_PROMPT = """
 You are an AI assistant helping to extract structured tool instructions from a user's expense-related query.
+
+IMPORTANT: You MUST return ONLY a Python dictionary as JSON - no explanations, no comments, no additional text.
 
 You MUST return a Python dictionary with keys depending on the operation:
 
@@ -127,10 +129,23 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         response = llm.invoke(prompt)
-        content = response.content if hasattr(response, "content") else str(response)
+        content = str(response.content if hasattr(response, "content") else response)
         print(f"\n🧠 LLM RESPONSE: {content}")  # Debug log
 
-        parsed = json.loads(content.strip())
+        # ✅ Strip code block markers if present
+        content = content.strip()
+        if content.startswith("```python"):
+            content = content[9:]  # Remove ```python
+        elif content.startswith("```json"):
+            content = content[7:]   # Remove ```json
+        elif content.startswith("```"):
+            content = content[3:]   # Remove ```
+        if content.endswith("```"):
+            content = content[:-3]  # Remove trailing ```
+        
+        content = content.strip()
+        
+        parsed = json.loads(content)
         operation = parsed.get("operation")
 
         if not operation or operation not in OPERATION_TO_TOOL:
@@ -192,4 +207,4 @@ def rewrite_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
             "invoked_tool": "None"
         }
 
-rewrite_agent_node = RunnableLambda(rewrite_agent_node)
+rewrite_agent_runnable = RunnableLambda(rewrite_agent_node)
