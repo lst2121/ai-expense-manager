@@ -18,6 +18,8 @@ class ExpenseAgentState(TypedDict):
     invoked_tool: Optional[str]
     df: pd.DataFrame  # ✅ Ensure DataFrame is passed across the pipeline
     memory: Optional[list[Dict[str, Any]]]  # ✅ Memory for follow-up reasoning
+    # Note: No need to add per-tool fields — handled via dynamic tool registry
+
 
 # 🧩 Create the LangGraph StateGraph
 graph = StateGraph(ExpenseAgentState)

@@ -27,7 +27,6 @@ queries = [
     "How much did I spend on groceries in May?",
     "How much did I spend in June?",
     "Summarize my past spending",
-    "How much did I spend on groceries in May?",
     "And in June?",
     "What about subscriptions?",
 ]

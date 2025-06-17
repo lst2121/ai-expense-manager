@@ -8,7 +8,10 @@ from tools.sum_category_expenses_tool import sum_category_expenses_tool
 from tools.date_range_expense_tool import date_range_expense_tool
 from tools.summarize_memory_tool import summarize_memory_tool
 from tools.compare_months_tool import compare_months_tool
-from expense_manager.utils.autofill_helpers import autofill_compare_months_args  # ✅ NEW
+from tools.compare_category_tool import compare_category_tool
+from tools.average_category_expense_tool import average_category_expense_tool
+from tools.category_summary_tool import category_summary_tool
+from expense_manager.utils.autofill_helpers import autofill_compare_months_args
 
 import pandas as pd
 
@@ -31,6 +34,9 @@ TOOL_REGISTRY = {
     "date_range_expense_tool": date_range_expense_tool,
     "summarize_memory_tool": summarize_memory_tool,
     "compare_months_tool": compare_months_tool,
+    "compare_category_tool": compare_category_tool,
+    "average_category_expense_tool": average_category_expense_tool,
+    "category_summary_tool": category_summary_tool,  # ✅ NEW TOOL
 }
 
 # Optional operation-to-tool mapping
@@ -43,7 +49,11 @@ OPERATION_TO_TOOL = {
     "query": "query_tool",
     "fallback": "fallback_tool",
     "date_range_expense": "date_range_expense_tool",
+    "compare_category": "compare_category_tool",
+    "average_category_expense": "average_category_expense_tool",
+    "category_summary": "category_summary_tool",  # ✅ NEW MAPPING
 }
+
 
 def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     tool_input = state.get("tool_input")
