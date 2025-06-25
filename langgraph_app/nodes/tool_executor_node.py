@@ -80,9 +80,10 @@ def tool_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     if operation == "compare_months" or tool_name == "compare_months_tool":
         arguments = autofill_compare_months_args(arguments)
 
-    # ✅ Inject memory if tool uses memory
+    # ✅ Inject memory AND df if tool uses memory (summarize_memory_tool can use both)
     if tool_name == "summarize_memory_tool":
         arguments["memory"] = state.get("memory", [])
+        arguments["df"] = state.get("df")  # Also pass df for data-based suggestions
 
     if not tool_name or tool_name not in TOOL_REGISTRY:
         return {
