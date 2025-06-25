@@ -1,11 +1,18 @@
 {
     "python.defaultInterpreterPath": "./ai-expense-venv/bin/python",
     "python.terminal.activateEnvironment": true,
-    "python.linting.enabled": true,
+    "python.linting.enabled": false,
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": false,
     "python.analysis.autoImportCompletions": true,
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "off",
     "python.analysis.stubPath": "./ai-expense-venv/lib/python*/site-packages",
-    "python.analysis.extraPaths": ["./"]
+    "python.analysis.extraPaths": ["./"],
+    "python.analysis.diagnosticMode": "off",
+    "python.analysis.autoSearchPaths": false,
+    "python.analysis.useLibraryCodeForTypes": false,
+    "python.analysis.completeFunctionParens": false,
+    "python.analysis.include": [],
+    "python.analysis.exclude": ["**/*"],
+    "python.analysis.ignore": ["**/*"]
 } 

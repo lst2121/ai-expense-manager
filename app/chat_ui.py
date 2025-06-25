@@ -152,6 +152,31 @@ custom_css = """
 }
 """
 
+def display_expense_data(df: pd.DataFrame) -> gr.DataFrame:
+    """
+    Displays expense data with inferred categories highlighted.
+    Args:
+        df: DataFrame with expense data, including inferred categories.
+    Returns:
+        Gradio DataFrame component with styled output.
+    """
+    if df.empty:
+        return gr.DataFrame(value=pd.DataFrame())
+
+    # Add a column to indicate inferred categories
+    df["Source"] = df["Category"].apply(
+        lambda x: "Inferred" if "/" in str(x) else "Manual"
+    )
+
+    # Style the DataFrame to highlight inferred categories
+    def style_row(row):
+        if row["Source"] == "Inferred":
+            return ["background-color: #FFF2CC"] * len(row)
+        return [""] * len(row)
+
+    styled_df = df.style.apply(style_row, axis=1)
+    return gr.DataFrame(value=styled_df, interactive=False)
+
 # Create the ChatGPT-like Gradio interface
 with gr.Blocks(css=custom_css, title="AI Expense Assistant - Chat UI") as demo:
     
@@ -307,7 +332,7 @@ def summarize_memory_tool(memory, df):
         questions = []
 
         # 1. Top categories analysis
-        top_categories = df.groupby('Category')['Amount'].sum().nlargest(3)
+        top_categories = df.groupby('Category')['Amount'].sum().head(3)
         if not top_categories.empty:
             questions.append(
                 f"Top spending categories: {', '.join(top_categories.index)}. "
