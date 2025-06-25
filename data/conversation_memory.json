@@ -898,5 +898,229 @@
     },
     "query_type": "complex",
     "execution_time": 44.101888
+  },
+  {
+    "id": "conv_32",
+    "session_id": "session_20250617_234509",
+    "timestamp": "2025-06-17T23:46:35.729967",
+    "query": "what is top expense on subscription",
+    "result": "Top 1 expenses in category 'Subscriptions':\n\n1. Spotify - \u20b91398.91 (2025-05-09 00:00:00)\n\n\ud83d\udcb0 Total: \u20b91398.91",
+    "metadata": {
+      "is_multi_step": false,
+      "step_results": [],
+      "execution_time": 10.857569,
+      "invoked_tool": "top_expenses_tool",
+      "query_timestamp": "2025-06-17T23:46:35.729947"
+    },
+    "query_type": "simple",
+    "execution_time": 10.857569
+  },
+  {
+    "id": "conv_33",
+    "session_id": "session_20250617_234509",
+    "timestamp": "2025-06-17T23:47:54.750554",
+    "query": "Would a monthly budget cap for e-commerce/fuel help control costs?",
+    "result": "### **Comprehensive Response: Would a Monthly Budget Cap for E-Commerce/Fuel Help Control Costs?**  \n\n#### **\ud83d\udd0d Key Findings**  \n1. **E-Commerce Spending**:  \n   - \u26a0\ufe0f *No data available* for the \"E-commerce\" category. This could mean:  \n     - Transactions aren\u2019t properly categorized as \"E-commerce.\"  \n     - No significant spending in this category.  \n   - **Action Needed**: Review transaction labels or add manual tracking for online purchases.  \n\n2. **Fuel Spending**:  \n   - \ud83d\udcca **Monthly Averages**:  \n     - **Range**: \u20b9485 \u2013 \u20b9923 per month  \n     - **6-Month Avg.**: ~\u20b9684/month  \n   - \ud83d\ude97 **Top 5 Fuel Expenses**:  \n     - All are fuel refills (diesel/petrol), with single transactions as high as **\u20b91,494**.  \n     - **Total for top 5**: \u20b96,281 (shows occasional large spikes).  \n\n---  \n\n#### **\ud83d\udccc Insights & Recommendations**  \n\u2705 **For Fuel**:  \n   - Spending is **moderate but inconsistent** (e.g., \u20b9485 in Feb vs. \u20b9923 in Jan).  \n   - Large refills (\u20b91,200\u2013\u20b91,500) suggest bulk purchases\u2014possibly tied to travel or price fluctuations.  \n   - **Budget Cap Suggestion**:  \n     - Set a **soft cap of ~\u20b9800/month** (slightly above average).  \n     - Track refill frequency\u2014could optimize timing to avoid price surges.  \n\n\u26a0\ufe0f **For E-Commerce**:  \n   - No data means **no clear trend** to justify a cap.  \n   - **Next Steps**:  \n     - Manually tag online purchases under \"E-commerce\" for 1\u20132 months.  \n     - Re-evaluate after gathering sufficient data.  \n\n---  \n\n#### **\ud83c\udfaf Final Verdict**  \n- **Fuel**: **Yes, a budget cap could help**\u2014especially to curb irregular high-cost refills.  \n- **E-Commerce**: **Not yet**\u2014needs better tracking first.  \n\n**Pro Tip**: Use expense alerts for fuel spending above \u20b91,000 in a single transaction to stay aware of big refills!  \n\nWould you like help setting up a tracking system for e-commerce expenses? \ud83d\ude0a",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f Could not match category 'E-commerce'",
+          "step_description": "Calculate average monthly spending on e-commerce",
+          "operation": "average_category_expense",
+          "arguments": {
+            "category": "E-commerce"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83d\udcc8 Average expense per month for 'Fuel':\n\u2022 2025-01: \u20b9923.01\n\u2022 2025-02: \u20b9485.08\n\u2022 2025-03: \u20b9561.66\n\u2022 2025-04: \u20b9725.58\n\u2022 2025-05: \u20b9762.38\n\u2022 2025-06: \u20b9648.21",
+          "step_description": "Calculate average monthly spending on fuel",
+          "operation": "average_category_expense",
+          "arguments": {
+            "category": "Fuel"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f No matching category found for 'E-commerce'",
+          "step_description": "Get top 5 e-commerce expenses to identify major spending patterns",
+          "operation": "top_n_expenses",
+          "arguments": {
+            "category": "E-commerce",
+            "n": 5
+          }
+        },
+        {
+          "success": true,
+          "result": "Top 5 expenses in category 'Fuel':\n\n1. Diesel refill - \u20b91494.92 (2025-04-04 00:00:00)\n2. Diesel refill - \u20b91242.89 (2025-05-01 00:00:00)\n3. Petrol pump - \u20b91217.68 (2025-05-23 00:00:00)\n4. Diesel refill - \u20b91212.76 (2025-01-14 00:00:00)\n5. Petrol pump - \u20b91112.79 (2025-01-02 00:00:00)\n\n\ud83d\udcb0 Total: \u20b96281.04",
+          "step_description": "Get top 5 fuel expenses to identify major spending patterns",
+          "operation": "top_n_expenses",
+          "arguments": {
+            "category": "Fuel",
+            "n": 5
+          }
+        }
+      ],
+      "execution_time": 37.968756,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-17T23:47:54.750544"
+    },
+    "query_type": "complex",
+    "execution_time": 37.968756
+  },
+  {
+    "id": "conv_34",
+    "session_id": "session_20250618_001046",
+    "timestamp": "2025-06-18T00:12:25.481476",
+    "query": "Would a monthly budget cap for e-commerce/fuel help control costs?",
+    "result": "### **Comprehensive Response: Should You Set a Monthly Budget Cap for E-Commerce & Fuel?**  \n\n#### **\ud83d\udd0d Key Findings**  \n1. **E-Commerce Expenses**  \n   - \u26a0\ufe0f *No data found* \u2013 Your transactions may not be categorized under \"E-commerce,\" or you haven\u2019t made significant purchases in this category.  \n   - **Action:** Review your spending history to see if online purchases fall under other categories (e.g., \"Shopping,\" \"Electronics\").  \n\n2. **Fuel Expenses**  \n   - \ud83d\udcca **Average Monthly Spend:** ~\u20b9684 (ranging from \u20b9485 to \u20b9923)  \n   - \ud83d\ude97 **Top 5 Fuel Expenses:**  \n     - All are fuel refills (diesel/petrol), with the highest being **\u20b91,494.92** in April.  \n     - Total of top 5 expenses: **\u20b96,281.04** (indicating occasional large refills).  \n\n---  \n\n#### **\ud83d\udca1 Insights & Recommendations**  \n\u2705 **Fuel Budget Cap:**  \n   - Since your **average monthly fuel expense is ~\u20b9684**, but some months exceed **\u20b9900**, a **soft cap of \u20b9800/month** would:  \n     - Allow flexibility for price fluctuations.  \n     - Encourage monitoring if spending nears the limit.  \n\n\u26a0\ufe0f **E-Commerce Budget Cap:**  \n   - Since no data exists, consider:  \n     - **Tracking online purchases manually** for a month.  \n     - Setting a **trial cap (e.g., \u20b95,000/month)** if you suspect overspending.  \n\n---  \n\n#### **\ud83d\udccc Actionable Steps**  \n1. **For Fuel:**  \n   - Set a **\u20b9800/month cap** and track deviations.  \n   - Use loyalty programs/apps to find discounts on fuel.  \n\n2. **For E-Commerce:**  \n   - Re-categorize past online purchases to identify trends.  \n   - If spending is minimal, a cap may not be needed.  \n\n3. **General Cost Control:**  \n   - Review **fuel refill frequency**\u2014could consolidating trips reduce costs?  \n   - Compare e-commerce vs. in-store prices before buying.  \n\n---  \n\n#### **\ud83c\udfaf Final Verdict**  \n- **Yes, a fuel budget cap (~\u20b9800/month) makes sense** based on your averages.  \n- **E-commerce needs more data** before setting a cap.  \n\nWould you like help setting up a tracking system for online purchases? \ud83d\ude0a",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f Could not match category 'E-commerce'",
+          "step_description": "Calculate average monthly spending on e-commerce",
+          "operation": "average_category_expense",
+          "arguments": {
+            "category": "E-commerce"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83d\udcc8 Average expense per month for 'Fuel':\n\u2022 2025-01: \u20b9923.01\n\u2022 2025-02: \u20b9485.08\n\u2022 2025-03: \u20b9561.66\n\u2022 2025-04: \u20b9725.58\n\u2022 2025-05: \u20b9762.38\n\u2022 2025-06: \u20b9648.21",
+          "step_description": "Calculate average monthly spending on fuel",
+          "operation": "average_category_expense",
+          "arguments": {
+            "category": "Fuel"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f No matching category found for 'E-commerce'",
+          "step_description": "Get top 5 expenses in e-commerce category",
+          "operation": "top_n_expenses",
+          "arguments": {
+            "category": "E-commerce",
+            "n": 5
+          }
+        },
+        {
+          "success": true,
+          "result": "Top 5 expenses in category 'Fuel':\n\n1. Diesel refill - \u20b91494.92 (2025-04-04 00:00:00)\n2. Diesel refill - \u20b91242.89 (2025-05-01 00:00:00)\n3. Petrol pump - \u20b91217.68 (2025-05-23 00:00:00)\n4. Diesel refill - \u20b91212.76 (2025-01-14 00:00:00)\n5. Petrol pump - \u20b91112.79 (2025-01-02 00:00:00)\n\n\ud83d\udcb0 Total: \u20b96281.04",
+          "step_description": "Get top 5 expenses in fuel category",
+          "operation": "top_n_expenses",
+          "arguments": {
+            "category": "Fuel",
+            "n": 5
+          }
+        }
+      ],
+      "execution_time": 41.259484,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-18T00:12:25.481466"
+    },
+    "query_type": "complex",
+    "execution_time": 41.259484
+  },
+  {
+    "id": "conv_35",
+    "session_id": "session_20250618_001414",
+    "timestamp": "2025-06-18T00:15:55.830307",
+    "query": "How much did i spend on netflix and youtube premium",
+    "result": "Here\u2019s a comprehensive breakdown of your spending on **Netflix** and **YouTube Premium** based on the analysis:\n\n---\n\n### **\ud83d\udcca Spending Summary**  \n\ud83d\udd0d *No expenses were found for either service during the analyzed period.*  \n\n- **Netflix**: \ufffd *No transactions detected*  \n- **YouTube Premium**: \ud83d\udeab *No transactions detected*  \n\n**Combined Total**: **$0.00**  \n\n---\n\n### **\ud83d\udd0d Insights & Next Steps**  \n1. **Possible Reasons for $0 Spending**:  \n   - You may not have active subscriptions to these services.  \n   - Transactions could be categorized under a different name (e.g., \"Google\" for YouTube Premium).  \n   - The analysis period might not cover recent payments.  \n\n2. **Actionable Tips**:  \n   - \ud83d\udee0\ufe0f *Check alternate categories* (e.g., \"Streaming,\" \"Entertainment,\" or vendor names like \"Google Play\").  \n   - \ud83d\udcc5 *Expand the time range* if you suspect payments were made outside the current analysis window.  \n   - \ud83d\udca1 *Review bank/credit statements* manually if needed.  \n\n---\n\n### **\ud83d\udcac Final Note**  \nIf you believe there\u2019s a discrepancy or need help refining the search, let me know! I can guide you on adjusting filters or categories for a deeper dive.  \n\n*(No spending detected, but double-checking never hurts!)* \ud83c\udfaf",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc2 No expenses found in category 'Netflix'.",
+          "step_description": "Calculate total spending on Netflix",
+          "operation": "sum_category_expenses",
+          "arguments": {
+            "category": "Netflix"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83d\udcc2 No expenses found in category 'YouTube Premium'.",
+          "step_description": "Calculate total spending on YouTube Premium",
+          "operation": "sum_category_expenses",
+          "arguments": {
+            "category": "YouTube Premium"
+          }
+        }
+      ],
+      "execution_time": 25.71145,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-18T00:15:55.830290"
+    },
+    "query_type": "multi_step",
+    "execution_time": 25.71145
+  },
+  {
+    "id": "conv_36",
+    "session_id": "session_20250625_195627",
+    "timestamp": "2025-06-25T20:00:17.489496",
+    "query": "Show grocery trends over 3 months",
+    "result": "### \ud83d\uded2 **Grocery Spending Trends (3-Month Analysis)**  \n\nHere\u2019s a breakdown of your grocery expenses over the past 3 months, along with key insights and actionable takeaways:  \n\n---\n\n#### \ud83d\udcca **Monthly Totals & Trends**  \n1. **May 2025**: \u20b93,744.02  \n   - 4 transactions (Costco, Trader Joe\u2019s)  \n   - Highest single purchase: \u20b91,429.20 (Trader Joe\u2019s)  \n\n2. **June 2025**: \u20b91,604.31  \n   - 4 transactions (Walmart, Costco)  \n   - Significant drop from May (-57% decrease)  \n   - Highest single purchase: \u20b91,106.34 (Walmart)  \n\n3. **July 2025**: *No data found*  \n   - Possible reasons:  \n     - No grocery expenses recorded.  \n     - Transactions miscategorized or missing.  \n\n---\n\n#### \ud83d\udd0d **Key Findings**  \n- **Sharp Decline in Spending**: June\u2019s grocery expenses were **less than half** of May\u2019s total.  \n  - Possible causes:  \n    - Changed shopping habits (e.g., fewer bulk purchases).  \n    - Switched to lower-cost stores (Walmart vs. Trader Joe\u2019s/Costco).  \n    - May included a large purchase (\u20b91,429.20), skewing the comparison.  \n\n- **Store Preferences Shifted**:  \n  - **May**: Heavy reliance on Trader Joe\u2019s (3/4 transactions).  \n  - **June**: Shift to Walmart (3/4 transactions).  \n\n- **Missing July Data**:  \n  - Recommend checking if expenses were logged under a different category (e.g., \"Food\" or \"Essentials\").  \n\n---\n\n#### \ud83d\udca1 **Actionable Insights**  \n1. **Review June\u2019s Savings**:  \n   - If the drop was intentional (e.g., budgeting), replicate strategies in future months.  \n   - If accidental (e.g., missed purchases), ensure consistent tracking.  \n\n2. **Audit July\u2019s Expenses**:  \n   - Verify if groceries were logged incorrectly or if spending truly paused.  \n\n3. **Compare Store Costs**:  \n   - Walmart purchases in June were smaller but more frequent\u2014was this more cost-effective?  \n\n4. **Set a Monthly Benchmark**:  \n   - Aim for a consistent budget (e.g., ~\u20b92,500/month) to balance flexibility and control.  \n\n---\n\n#### \ud83d\udccc **Final Thoughts**  \nYour grocery spending fluctuated significantly, with a steep drop in June and no recorded data for July. To refine trends:  \n- Consistently categorize expenses.  \n- Note *why* spending changed (e.g., stocked up in May, ate out more in July?).  \n\nLet me know if you\u2019d like help diving deeper into any month! \ud83d\ude9b",
+    "metadata": {
+      "is_multi_step": true,
+      "step_results": [
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-05 (Category: Groceries):\n- 2025-05-09 | Groceries | \u20b9988.76 | Costco\n- 2025-05-21 | Groceries | \u20b91068.83 | Trader Joe\u2019s\n- 2025-05-13 | Groceries | \u20b9257.23 | Trader Joe\u2019s\n- 2025-05-31 | Groceries | \u20b91429.2 | Trader Joe\u2019s\n\n\ud83d\udcb0 Total: \u20b93744.02",
+          "step_description": "Get grocery expenses for the first month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-05",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\ud83d\udcc6 Expenses in 2025-06 (Category: Groceries):\n- 2025-06-15 | Groceries | \u20b91106.34 | Walmart\n- 2025-06-07 | Groceries | \u20b9167.4 | Costco\n- 2025-06-19 | Groceries | \u20b9118.12 | Walmart\n- 2025-06-25 | Groceries | \u20b9212.45 | Walmart\n\n\ud83d\udcb0 Total: \u20b91604.31",
+          "step_description": "Get grocery expenses for the second month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-06",
+            "category": "Groceries"
+          }
+        },
+        {
+          "success": true,
+          "result": "\u26a0\ufe0f No matching category found for 'Groceries'",
+          "step_description": "Get grocery expenses for the third month",
+          "operation": "list_month_expenses",
+          "arguments": {
+            "month": "2025-07",
+            "category": "Groceries"
+          }
+        }
+      ],
+      "execution_time": 52.115785,
+      "invoked_tool": "unknown",
+      "query_timestamp": "2025-06-25T20:00:17.489496"
+    },
+    "query_type": "complex",
+    "execution_time": 52.115785
+  },
+  {
+    "id": "conv_37",
+    "session_id": "session_20250625_200408",
+    "timestamp": "2025-06-25T20:05:43.064270",
+    "query": "Show top 5 expenses",
+    "result": "Top 5 expenses:\n\n1. Diesel refill - \u20b91494.92 (2025-04-04 00:00:00)\n2. Amazon - \u20b91494.51 (2025-03-15 00:00:00)\n3. Flipkart - \u20b91481.64 (2025-04-24 00:00:00)\n4. Doctor visit - \u20b91468.91 (2025-03-28 00:00:00)\n5. Internet - \u20b91464.61 (2025-06-13 00:00:00)\n\n\ud83d\udcb0 Total: \u20b97404.59",
+    "metadata": {
+      "is_multi_step": false,
+      "step_results": [],
+      "execution_time": 14.649406,
+      "invoked_tool": "top_expenses_tool",
+      "query_timestamp": "2025-06-25T20:05:43.064270"
+    },
+    "query_type": "simple",
+    "execution_time": 14.649406
   }
 ]

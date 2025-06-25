@@ -126,7 +126,7 @@ def generate_memory_display(limit: int = 10,
         conversations = memory_system.get_conversations(
             limit=limit,
             session_only=False,
-            query_type=filter_type
+            query_type=filter_type or ""
         )
     
     if not conversations:

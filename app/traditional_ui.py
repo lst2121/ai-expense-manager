@@ -179,6 +179,35 @@ def search_conversations(search_term: str):
     
     return display_text
 
+def display_expense_data(df: pd.DataFrame) -> gr.DataFrame:
+    """
+    Displays expense data with inferred categories highlighted.
+    Args:
+        df: DataFrame with expense data, including inferred categories.
+    Returns:
+        Gradio DataFrame component with styled output.
+    """
+    if df.empty:
+        empty_df = pd.DataFrame(columns=["Date", "Category", "Amount", "Notes"])
+        return gr.DataFrame(value=empty_df)
+
+    # Add a column to indicate inferred categories
+    df["Source"] = df["Category"].apply(
+        lambda x: "Inferred" if "/" in str(x) else "Manual"
+    )
+
+    # Style the DataFrame to highlight inferred categories
+    def style_row(row):
+        if row["Source"] == "Inferred":
+            return ["background-color: #FFF2CC"] * len(row)
+        return [""] * len(row)
+
+    styled_df = df.style.apply(style_row, axis=1)
+    return gr.DataFrame(
+        value=df,  # Use original DataFrame instead of styled version
+        interactive=False
+    )
+
 ### 🎨 UI Setup ###
 custom_css = """
 .gradio-container {
@@ -276,11 +305,7 @@ with gr.Blocks(css=custom_css, title="AI Expense Assistant - Traditional") as de
         # ==================== DATA TAB ====================
         with gr.TabItem("📊 Data Preview", id="data"):
             gr.Markdown("### 📊 Uploaded Data Preview")
-            data_preview = gr.Dataframe(
-                value=pd.DataFrame(),
-                interactive=False,
-                wrap=True
-            )
+            data_display = display_expense_data(pd.DataFrame())
     
     # ==================== EVENT HANDLERS ====================
     
@@ -350,7 +375,7 @@ with gr.Blocks(css=custom_css, title="AI Expense Assistant - Traditional") as de
     file_input.upload(
         fn=handle_file_upload,
         inputs=[file_input],
-        outputs=[state, data_preview, upload_status]
+        outputs=[state, data_display, upload_status]
     )
     
     # Memory search
