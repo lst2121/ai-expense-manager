@@ -7,7 +7,7 @@ from langgraph.graph import StateGraph, END
 
 # 🧠 Nodes (Logic Components)
 from langgraph_app.nodes.rewrite_agent_node import rewrite_agent_runnable
-from langgraph_app.nodes.tool_executor_node import tool_executor_node
+from langgraph_app.nodes.duckdb_tool_executor_node import duckdb_tool_executor_node
 from langgraph_app.nodes.retrieve_memory_node import retrieve_memory_node
 from langgraph_app.nodes.planner_node import planner_runnable
 from langgraph_app.nodes.chain_executor_node import chain_executor_runnable
@@ -17,6 +17,7 @@ class ExpenseAgentState(TypedDict):
     query: str
     tool_input: Optional[Dict[str, Any]]
     result: Optional[str]
+    chart: Optional[str]  # 🚀 NEW: Base64 chart data
     invoked_tool: Optional[str]
     df: pd.DataFrame  # ✅ Ensure DataFrame is passed across the pipeline
     memory: Optional[list[Dict[str, Any]]]  # ✅ Memory for follow-up reasoning
@@ -52,7 +53,7 @@ graph = StateGraph(ExpenseAgentState)
 graph.add_node("planner", planner_runnable)
 graph.add_node("rewrite_query", rewrite_agent_runnable)
 graph.add_node("retrieve_memory", retrieve_memory_node)
-graph.add_node("execute_tool", tool_executor_node)
+graph.add_node("execute_tool", duckdb_tool_executor_node)  # 🚀 Updated to use DuckDB executor
 graph.add_node("chain_executor", chain_executor_runnable)
 
 # 🔀 Define Graph Flow
