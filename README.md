@@ -33,7 +33,6 @@ This project combines multiple AI and data technologies to create an intelligent
 #### Web Interface
 - **Streamlit**: Primary web application
 - **Gradio**: Alternative UI framework
-- **FastAPI**: REST API backend
 
 #### Visualization
 - **Plotly**: Interactive charts and graphs
@@ -175,14 +174,9 @@ Your CSV files should have these columns:
 
 The project comes with sample data in `data/sample_expense.csv` (200+ example records) to get you started.
 
-## API Endpoints
+## Programmatic Access
 
-The system includes FastAPI endpoints for programmatic access:
-
-- `POST /upload`: Upload CSV files
-- `POST /query`: Submit natural language queries
-- `GET /categories`: Retrieve available categories
-- `GET /summary`: Get expense summary statistics
+The system can be extended with API endpoints for programmatic access. The current implementation focuses on web interfaces (Streamlit/Gradio) and command-line tools.
 
 ## Development
 
