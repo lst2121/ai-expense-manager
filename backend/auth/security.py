@@ -77,3 +77,19 @@ async def get_current_user_optional(authorization: Optional[str] = Header(None))
     token = authorization.split(" ")[1]
     return decode_access_token(token)
 
+
+def get_user_id_from_auth(
+    authorization: Optional[str] = None,
+    x_user_id: Optional[str] = None
+) -> str:
+    """Resolves authenticated user ID from Bearer token or X-User-Id header, defaulting to demo user."""
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        decoded = decode_access_token(token)
+        if decoded and decoded.get("sub"):
+            return decoded["sub"]
+    if x_user_id and x_user_id.strip():
+        return x_user_id.strip()
+    return "usr-lokender-2026"
+
+

@@ -7,6 +7,7 @@ import {
   fetchChatSessions,
   updateChatSession,
   deleteChatSession,
+  getAuthHeaders,
 } from './services/api';
 import type { ChatSessionItem } from './services/api';
 
@@ -16,10 +17,18 @@ export function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState({
-    id: 'usr-lokender-2026',
-    email: 'lokender@nivo.ai',
-    full_name: 'Lokender Singh',
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('nivo_user');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {
+      id: 'usr-lokender-2026',
+      email: 'lokender@nivo.ai',
+      full_name: 'Lokender Singh',
+    };
   });
   const [provider, setProvider] = useState<'deepseek' | 'gemini'>('deepseek');
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
@@ -33,6 +42,8 @@ export function App() {
       // If there are sessions and no active session selected, pick the most recent
       if (list.length > 0 && !activeSessionId) {
         setActiveSessionId(list[0].id);
+      } else if (list.length === 0) {
+        setActiveSessionId(null);
       }
     } catch (err) {
       console.error('Failed to load chat sessions:', err);
@@ -40,6 +51,21 @@ export function App() {
   };
 
   useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: getAuthHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            setCurrentUser(data.user);
+            localStorage.setItem('nivo_user', JSON.stringify(data.user));
+          }
+        }
+      } catch (e) {}
+    };
+    verifyAuth();
     loadSessions();
   }, []);
 
@@ -136,6 +162,8 @@ export function App() {
         currentUser={currentUser}
         onLoginSuccess={(user) => {
           setCurrentUser(user);
+          localStorage.setItem('nivo_user', JSON.stringify(user));
+          setActiveSessionId(null);
           loadSessions();
         }}
       />

@@ -1,15 +1,20 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from backend.database.connection import get_async_db
+from backend.auth.security import get_user_id_from_auth
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 
 @router.get("/kpis")
-async def get_kpis(db: AsyncSession = Depends(get_async_db)) -> Dict[str, Any]:
+async def get_kpis(
+    authorization: Optional[str] = Header(None),
+    x_user_id: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_async_db)
+) -> Dict[str, Any]:
     """
     Returns executive KPI metrics:
     - Total spend
@@ -20,24 +25,29 @@ async def get_kpis(db: AsyncSession = Depends(get_async_db)) -> Dict[str, Any]:
     - Category distribution
     - Monthly spend trend
     """
+    user_id = get_user_id_from_auth(authorization, x_user_id)
+    user_cond = "(user_id = :user_id OR user_id IS NULL)" if user_id == "usr-lokender-2026" else "user_id = :user_id"
+
     # 1. Total Spend and Count
     total_query = await db.execute(
-        text("SELECT COALESCE(SUM(total_amount), 0) as total, COUNT(id) as count FROM transactions;")
+        text(f"SELECT COALESCE(SUM(total_amount), 0) as total, COUNT(id) as count FROM transactions WHERE {user_cond};"),
+        {"user_id": user_id}
     )
     total_row = total_query.fetchone()
     total_spend = float(total_row[0]) if total_row else 0.0
     total_transactions = int(total_row[1]) if total_row else 0
 
     # 2. Monthly Trend
-    monthly_query = await db.execute(text("""
+    monthly_query = await db.execute(text(f"""
         SELECT 
             TO_CHAR(date, 'YYYY-MM') as month,
             ROUND(SUM(total_amount)::numeric, 2) as spend,
             COUNT(id) as count
         FROM transactions
+        WHERE {user_cond}
         GROUP BY TO_CHAR(date, 'YYYY-MM')
         ORDER BY month ASC;
-    """))
+    """), {"user_id": user_id})
     monthly_trend = [
         {"month": row[0], "spend": float(row[1]), "count": int(row[2])}
         for row in monthly_query.fetchall()
@@ -56,15 +66,16 @@ async def get_kpis(db: AsyncSession = Depends(get_async_db)) -> Dict[str, Any]:
         burn_rate = monthly_trend[0]["spend"]
 
     # 3. Category Distribution
-    cat_query = await db.execute(text("""
+    cat_query = await db.execute(text(f"""
         SELECT 
             category,
             ROUND(SUM(total_amount)::numeric, 2) as total,
             COUNT(id) as count
         FROM transactions
+        WHERE {user_cond}
         GROUP BY category
         ORDER BY total DESC;
-    """))
+    """), {"user_id": user_id})
     cat_rows = cat_query.fetchall()
     category_distribution = []
     top_category = "N/A"

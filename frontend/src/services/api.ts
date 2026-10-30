@@ -58,6 +58,58 @@ export interface ExpenseIntent {
   payment_method?: string;
 }
 
+export interface FinancialInsightData {
+  title: string;
+  status: 'unverified' | 'audited' | 'projected' | 'warning';
+  status_label?: string;
+  metric?: string;
+  metric_label?: string;
+  findings: string[];
+  recommended_action?: {
+    label: string;
+    payload?: string;
+  };
+  calculation?: {
+    formula?: string;
+    accounts_involved?: string[];
+    sql_query?: string;
+    execution_time_ms?: number;
+    notes?: string;
+  };
+}
+
+export interface AppNotification {
+  id: string;
+  type: 'anomaly' | 'briefing' | 'task';
+  title: string;
+  message: string;
+  date: string;
+  severity: 'high' | 'normal' | 'info';
+  action_label?: string;
+  action_prompt?: string;
+  read: boolean;
+}
+
+export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('nivo_auth_token');
+  const userStr = localStorage.getItem('nivo_user');
+  let userId = 'usr-lokender-2026';
+  if (userStr) {
+    try {
+      const u = JSON.parse(userStr);
+      if (u.id) userId = u.id;
+    } catch (e) {}
+  }
+  const headers: Record<string, string> = {
+    'X-User-Id': userId,
+    ...extraHeaders,
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export interface ReceiptWidgetData {
   widget_type: 'receipt_card';
   receipt: {
@@ -74,7 +126,9 @@ export interface ReceiptWidgetData {
 const API_BASE = '/api';
 
 export async function fetchKpis(): Promise<KpiData> {
-  const res = await fetch(`${API_BASE}/analytics/kpis`);
+  const res = await fetch(`${API_BASE}/analytics/kpis`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error(`Failed to fetch KPIs: ${res.statusText}`);
   return res.json();
 }
@@ -95,13 +149,17 @@ export async function fetchTransactions(params: {
   if (params.sort_by) query.set('sort_by', params.sort_by);
   if (params.sort_order) query.set('sort_order', params.sort_order);
 
-  const res = await fetch(`${API_BASE}/transactions?${query.toString()}`);
+  const res = await fetch(`${API_BASE}/transactions?${query.toString()}`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error(`Failed to fetch transactions: ${res.statusText}`);
   return res.json();
 }
 
 export async function fetchAccounts(): Promise<AccountItem[]> {
-  const res = await fetch(`${API_BASE}/accounts`);
+  const res = await fetch(`${API_BASE}/accounts`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error(`Failed to fetch accounts: ${res.statusText}`);
   return res.json();
 }
@@ -116,7 +174,7 @@ export async function createTransaction(payload: {
 }): Promise<any> {
   const res = await fetch(`${API_BASE}/transactions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Failed to create transaction: ${res.statusText}`);
@@ -131,6 +189,7 @@ export interface StreamHandlers {
   onChart?: (spec: ChartSpec) => void;
   onIntent?: (intent: ExpenseIntent) => void;
   onWidget?: (data: any) => void;
+  onInsight?: (insight: FinancialInsightData) => void;
   onDone?: () => void;
   onError?: (error: string) => void;
 }
@@ -151,7 +210,7 @@ export async function streamCopilotChat(
     try {
       const response = await fetch(`${API_BASE}/chat/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           message,
           thread_id: threadId,
@@ -215,6 +274,8 @@ export async function streamCopilotChat(
               handlers.onIntent(parsed.intent);
             } else if (eventType === 'widget' && handlers.onWidget) {
               handlers.onWidget(parsed);
+            } else if (eventType === 'insight' && handlers.onInsight) {
+              handlers.onInsight(parsed.insight);
             } else if (eventType === 'session' && handlers.onSession) {
               handlers.onSession(parsed);
             } else if (eventType === 'done' && handlers.onDone) {
@@ -333,6 +394,7 @@ export async function ingestDocument(
 
   const res = await fetch(`${API_BASE}/chat/ingest`, {
     method: 'POST',
+    headers: getAuthHeaders(),
     body: formData,
   });
   if (!res.ok) throw new Error(`Document ingestion failed: ${res.statusText}`);
@@ -341,7 +403,9 @@ export async function ingestDocument(
 
 export async function fetchDynamicSuggestions(language: string = 'en'): Promise<string[]> {
   try {
-    const res = await fetch(`${API_BASE}/chat/suggestions?language=${encodeURIComponent(language)}`);
+    const res = await fetch(`${API_BASE}/chat/suggestions?language=${encodeURIComponent(language)}`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return data.suggestions || [];
@@ -365,7 +429,7 @@ export async function submitChatFeedback(payload: FeedbackPayload): Promise<bool
   try {
     const res = await fetch(`${API_BASE}/chat/feedback`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
     });
     return res.ok;
@@ -404,7 +468,9 @@ export interface ChatSessionDetail {
 
 export async function fetchChatSessions(): Promise<ChatSessionItem[]> {
   try {
-    const res = await fetch(`${API_BASE}/chat/sessions`);
+    const res = await fetch(`${API_BASE}/chat/sessions`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return data.sessions || [];
@@ -418,7 +484,7 @@ export async function createChatSession(title?: string): Promise<ChatSessionItem
   try {
     const res = await fetch(`${API_BASE}/chat/sessions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ title: title || 'New Conversation' }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -432,7 +498,9 @@ export async function createChatSession(title?: string): Promise<ChatSessionItem
 
 export async function fetchSessionDetail(sessionId: string): Promise<ChatSessionDetail | null> {
   try {
-    const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}`);
+    const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return data.session || null;
@@ -449,7 +517,7 @@ export async function updateChatSession(
   try {
     const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
     });
     return res.ok;
@@ -463,11 +531,37 @@ export async function deleteChatSession(sessionId: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
     });
     return res.ok;
   } catch (err) {
     console.error(`Failed to delete session ${sessionId}:`, err);
     return false;
+  }
+}
+
+export async function fetchNotifications(): Promise<{ notifications: AppNotification[]; unread_count: number }> {
+  try {
+    const res = await fetch(`${API_BASE}/notifications`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return { notifications: [], unread_count: 0 };
+    return res.json();
+  } catch (err) {
+    console.warn('Failed to fetch notifications:', err);
+    return { notifications: [], unread_count: 0 };
+  }
+}
+
+export async function dismissNotification(notificationId: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/notifications/dismiss`, {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ notification_id: notificationId }),
+    });
+  } catch (err) {
+    console.warn('Failed to dismiss notification:', err);
   }
 }
 

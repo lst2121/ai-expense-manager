@@ -26,6 +26,10 @@ import {
   Settings,
   ChevronDown,
   Edit2,
+  Bell,
+  BellRing,
+  AlertTriangle,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   streamCopilotChat,
@@ -34,9 +38,12 @@ import {
   fetchDynamicSuggestions,
   submitChatFeedback,
   fetchSessionDetail,
+  fetchNotifications,
+  dismissNotification,
 } from '../../services/api';
-import type { ChartSpec, ExpenseIntent } from '../../services/api';
+import type { ChartSpec, ExpenseIntent, FinancialInsightData, AppNotification } from '../../services/api';
 import { RechartsCard } from '../Charts/RechartsCard';
+import { FinancialInsightCard } from '../Cards/FinancialInsightCard';
 
 interface Message {
   id: string;
@@ -48,6 +55,7 @@ interface Message {
   intentAdded?: boolean;
   intentDismissed?: boolean;
   isEditingIntent?: boolean;
+  financialInsight?: FinancialInsightData;
   receiptWidget?: {
     vendor_name: string;
     date: string;
@@ -95,6 +103,14 @@ const AVAILABLE_EXPENSE_CATEGORIES = [
   'entertainment',
   'rent',
   'general',
+];
+
+const AVAILABLE_PAYMENT_METHODS = [
+  'UPI',
+  'Cash',
+  'Credit Card',
+  'Debit Card',
+  'Net Banking',
 ];
 
 export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
@@ -164,6 +180,42 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const [activeFeedbackMsgId, setActiveFeedbackMsgId] = useState<string | null>(null);
 
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  const loadNotifications = async () => {
+    try {
+      const res = await fetchNotifications();
+      setNotifications(res.notifications || []);
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutsideNotif = (event: MouseEvent) => {
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    if (isNotifOpen) {
+      document.addEventListener('mousedown', handleClickOutsideNotif);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideNotif);
+    };
+  }, [isNotifOpen]);
+
+  const handleDismissNotif = async (notifId: string) => {
+    await dismissNotification(notifId);
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -187,20 +239,24 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     setThreadId(sessionId);
     fetchSessionDetail(sessionId).then((detail) => {
       if (detail && detail.messages && detail.messages.length > 0) {
-        const loadedMessages: Message[] = detail.messages.map((m) => ({
-          id: m.id,
-          sender: m.role,
-          content: m.content,
-          chartSpec: m.chart_spec || undefined,
-          toolsUsed: m.tool_calls
-            ? m.tool_calls.map((t: any) => ({
-                tool: t.tool || 'Analysis Tool',
-                status: 'done' as const,
-                input: t.input,
-              }))
-            : undefined,
-          userQuery: m.role === 'assistant' ? undefined : m.content,
-        }));
+        const loadedMessages: Message[] = detail.messages.map((m) => {
+          const insightItem = m.tool_calls?.find((t: any) => t.insight)?.insight;
+          return {
+            id: m.id,
+            sender: m.role,
+            content: m.content,
+            chartSpec: m.chart_spec || undefined,
+            financialInsight: insightItem || undefined,
+            toolsUsed: m.tool_calls
+              ? m.tool_calls.map((t: any) => ({
+                  tool: t.tool || 'Analysis Tool',
+                  status: 'done' as const,
+                  input: t.input,
+                }))
+              : undefined,
+            userQuery: m.role === 'assistant' ? undefined : m.content,
+          };
+        });
         setMessages(loadedMessages);
       } else {
         setMessages([
@@ -866,6 +922,16 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     );
   };
 
+  const handleUpdateIntentPayment = (msgId: string, newPaymentMethod: string) => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msgId && m.intent
+          ? { ...m, intent: { ...m.intent, payment_method: newPaymentMethod } }
+          : m
+      )
+    );
+  };
+
   const handleSend = async (messageText?: string) => {
     const rawText = messageText !== undefined ? messageText : input;
     const textToSend = rawText.trim();
@@ -873,6 +939,56 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
     // Reject if neither text nor file is present, or if streaming
     if ((!textToSend && !currentStagedFile) || isStreaming) return;
+
+    // Conversational follow-up: detect if user typed "cash", "credit card", "debit card", "upi"
+    // to mutate an unconfirmed pending expense intent
+    const lowerTrimmed = textToSend.toLowerCase().replace(/^(?:it was\s+|paid\s+(?:in|by|via|with)?\s*)/i, '').trim();
+    let matchedMethod: string | undefined = undefined;
+    if (lowerTrimmed === 'cash' || lowerTrimmed === 'by cash' || lowerTrimmed === 'in cash') {
+      matchedMethod = 'Cash';
+    } else if (lowerTrimmed === 'upi' || lowerTrimmed === 'gpay' || lowerTrimmed === 'phonepe' || lowerTrimmed === 'paytm') {
+      matchedMethod = 'UPI';
+    } else if (lowerTrimmed === 'card' || lowerTrimmed === 'credit' || lowerTrimmed === 'credit card' || lowerTrimmed === 'cc') {
+      matchedMethod = 'Credit Card';
+    } else if (lowerTrimmed === 'debit' || lowerTrimmed === 'debit card' || lowerTrimmed === 'dc') {
+      matchedMethod = 'Debit Card';
+    } else if (lowerTrimmed === 'net banking' || lowerTrimmed === 'netbanking' || lowerTrimmed === 'bank transfer') {
+      matchedMethod = 'Net Banking';
+    } else {
+      matchedMethod = AVAILABLE_PAYMENT_METHODS.find(
+        (pm) => pm.toLowerCase() === lowerTrimmed || pm.toLowerCase() === lowerTrimmed.replace(/\s+/g, '')
+      );
+    }
+    if (!currentStagedFile && matchedMethod) {
+      const pendingMsgIndex = [...messages].reverse().findIndex((m) => m.intent && !m.intentAdded && !m.intentDismissed);
+      if (pendingMsgIndex !== -1) {
+        const actualIndex = messages.length - 1 - pendingMsgIndex;
+        const targetMsg = messages[actualIndex];
+        setInput('');
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === targetMsg.id && m.intent
+              ? { ...m, intent: { ...m.intent, payment_method: matchedMethod } }
+              : m
+          ).concat([
+            {
+              id: Date.now().toString(),
+              sender: 'user',
+              content: textToSend,
+            },
+            {
+              id: (Date.now() + 1).toString(),
+              sender: 'assistant',
+              content:
+                language === 'hi'
+                  ? `समझ गया! **${targetMsg.intent?.item}** के लिए भुगतान माध्यम बदलकर **${matchedMethod}** कर दिया गया है। दर्ज करने के लिए ऊपर **[Approve & Record]** पर क्लिक करें।`
+                  : `Got it! Updated payment method for **${targetMsg.intent?.item}** to **${matchedMethod}**. Tap **[Approve & Record]** above to commit it.`,
+            }
+          ])
+        );
+        return;
+      }
+    }
 
     setStagedFile(null);
     setInput('');
@@ -972,6 +1088,13 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                   )
                 );
               }
+            },
+            onInsight: (insight) => {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMsgId ? { ...msg, financialInsight: insight } : msg
+                )
+              );
             },
             onDone: () => {
               setMessages((prev) =>
@@ -1157,6 +1280,13 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                 )
               );
             }
+          },
+          onInsight: (insight) => {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMsgId ? { ...msg, financialInsight: insight } : msg
+              )
+            );
           },
           onDone: () => {
             setMessages((prev) =>
@@ -1353,6 +1483,99 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               <Plus className="w-3.5 h-3.5" />
               <span>New Chat</span>
             </button>
+
+            {/* Notification Bell */}
+            <div className="relative" ref={notifDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                title="Financial Notifications & Anomaly Alerts"
+                className="relative p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                {notifications.some((n) => !n.read) ? (
+                  <BellRing className="w-4 h-4 text-amber-400 animate-pulse" />
+                ) : (
+                  <Bell className="w-4 h-4" />
+                )}
+                {notifications.some((n) => !n.read) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-slate-900" />
+                )}
+              </button>
+
+              {/* Notification Popover Drawer */}
+              {isNotifOpen && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-2xl p-4 text-xs z-50 backdrop-blur-xl animate-fade-in space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <div className="flex items-center gap-1.5 font-semibold text-white">
+                      <Bell className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Ledger Alerts & Briefings</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                      {notifications.length} active
+                    </span>
+                  </div>
+
+                  {notifications.length === 0 ? (
+                    <div className="py-6 text-center text-slate-400">
+                      <ShieldCheck className="w-8 h-8 mx-auto mb-2 text-emerald-400/60" />
+                      <p className="text-xs font-medium text-slate-300">All Normal & In Balance</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">No spending anomalies or pending briefings.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                      {notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className={`p-3 rounded-xl border ${
+                            notif.severity === 'high'
+                              ? 'bg-amber-950/20 border-amber-500/30'
+                              : 'bg-slate-800/50 border-slate-700/50'
+                          } space-y-2`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-semibold text-white text-[11px] flex items-center gap-1.5">
+                              {notif.severity === 'high' ? (
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                              ) : (
+                                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                              )}
+                              {notif.title}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleDismissNotif(notif.id)}
+                              className="text-[10px] text-slate-500 hover:text-slate-300 transition"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <p className="text-[11px] text-slate-300 leading-relaxed">
+                            {notif.message}
+                          </p>
+
+                          {notif.action_prompt && (
+                            <div className="pt-1 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsNotifOpen(false);
+                                  handleSend(notif.action_prompt);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[10px] flex items-center gap-1 transition"
+                              >
+                                <span>{notif.action_label || 'Investigate'}</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {onOpenSettings && (
               <button
@@ -1554,7 +1777,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                         <button
                           type="button"
                           onClick={() => handleToggleEditIntent(msg.id)}
-                          title="Edit category"
+                          title="Edit category or payment method"
                           className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -1579,25 +1802,43 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                     )}
                   </div>
 
-                  {/* Inline Category Editor */}
+                  {/* Inline Category & Payment Method Editor */}
                   {msg.isEditingIntent && !msg.intentAdded && !msg.intentDismissed && (
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2 text-xs">
-                      <span className="text-slate-400 text-[11px]">Category:</span>
-                      <select
-                        value={msg.intent.category}
-                        onChange={(e) => handleUpdateIntentCategory(msg.id, e.target.value)}
-                        className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white outline-none capitalize cursor-pointer"
-                      >
-                        {AVAILABLE_EXPENSE_CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat} className="capitalize">
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="pt-2.5 border-t border-slate-800/80 flex flex-wrap items-center gap-3 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400 text-[11px]">Category:</span>
+                        <select
+                          value={msg.intent.category}
+                          onChange={(e) => handleUpdateIntentCategory(msg.id, e.target.value)}
+                          className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white outline-none capitalize cursor-pointer focus:border-indigo-500"
+                        >
+                          {AVAILABLE_EXPENSE_CATEGORIES.map((cat) => (
+                            <option key={cat} value={cat} className="capitalize">
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400 text-[11px]">Paid via:</span>
+                        <select
+                          value={msg.intent.payment_method || 'UPI'}
+                          onChange={(e) => handleUpdateIntentPayment(msg.id, e.target.value)}
+                          className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white outline-none cursor-pointer focus:border-indigo-500"
+                        >
+                          {AVAILABLE_PAYMENT_METHODS.map((pm) => (
+                            <option key={pm} value={pm}>
+                              {pm}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => handleToggleEditIntent(msg.id)}
-                        className="ml-auto px-2 py-0.5 rounded text-[11px] bg-slate-800 text-slate-300 hover:text-white"
+                        className="ml-auto px-2.5 py-1 rounded text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
                       >
                         Done
                       </button>
@@ -1610,6 +1851,16 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               {msg.chartSpec && (
                 <div className="mt-3">
                   <RechartsCard spec={msg.chartSpec} />
+                </div>
+              )}
+
+              {/* Financial Insight & Calculation Card */}
+              {msg.financialInsight && (
+                <div className="mt-3">
+                  <FinancialInsightCard
+                    data={msg.financialInsight}
+                    onAction={(action) => handleSend(action)}
+                  />
                 </div>
               )}
 

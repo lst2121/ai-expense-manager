@@ -1,12 +1,13 @@
 import datetime
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Header
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 from backend.database.connection import get_async_db
+from backend.auth.security import get_user_id_from_auth
 
 router = APIRouter(prefix="/api", tags=["transactions"])
 
@@ -31,13 +32,22 @@ async def list_transactions(
     is_reconciled: Optional[bool] = None,
     sort_by: str = Query("date", regex="^(date|total_amount|category|description)$"),
     sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    authorization: Optional[str] = Header(None),
+    x_user_id: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_async_db)
 ) -> Dict[str, Any]:
     """
     Returns a filterable, sortable, paginated transaction ledger.
     """
+    user_id = get_user_id_from_auth(authorization, x_user_id)
     conditions = ["1=1"]
     params: Dict[str, Any] = {}
+
+    if user_id == "usr-lokender-2026":
+        conditions.append("(t.user_id = :user_id OR t.user_id IS NULL)")
+    else:
+        conditions.append("t.user_id = :user_id")
+    params["user_id"] = user_id
 
     if category and category.lower() != "all":
         conditions.append("LOWER(t.category) = LOWER(:category)")
@@ -156,13 +166,16 @@ async def list_vendors(db: AsyncSession = Depends(get_async_db)) -> List[Dict[st
 @router.post("/transactions")
 async def create_transaction(
     payload: CreateTransactionRequest,
+    authorization: Optional[str] = Header(None),
+    x_user_id: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_async_db)
 ) -> Dict[str, Any]:
     """
     Creates a new transaction and automatically enforces balanced double-entry journal entries:
     - Debit: Expense Account
-    - Credit: Operating Cash & Bank Account (1010)
+    - Credit: Operating Cash & Bank Account (1010) or Credit Card Liability (2010)
     """
+    user_id = get_user_id_from_auth(authorization, x_user_id)
     tx_date = (
         datetime.datetime.strptime(payload.date, "%Y-%m-%d")
         if payload.date
@@ -211,8 +224,8 @@ async def create_transaction(
     # Insert Transaction
     insert_tx = await db.execute(
         text("""
-            INSERT INTO transactions (date, description, vendor_id, account_id, total_amount, payment_method, category, is_reconciled, notes, created_at)
-            VALUES (:date, :description, :vendor_id, :account_id, :amount, :payment_method, :category, false, :notes, NOW())
+            INSERT INTO transactions (date, description, vendor_id, account_id, user_id, total_amount, payment_method, category, is_reconciled, notes, created_at)
+            VALUES (:date, :description, :vendor_id, :account_id, :user_id, :amount, :payment_method, :category, false, :notes, NOW())
             RETURNING id;
         """),
         {
@@ -220,6 +233,7 @@ async def create_transaction(
             "description": payload.description,
             "vendor_id": vendor_id,
             "account_id": account_id,
+            "user_id": user_id,
             "amount": amount,
             "payment_method": payload.payment_method or "Bank Transfer",
             "category": payload.category.lower(),

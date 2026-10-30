@@ -180,4 +180,51 @@ test.describe('Executive Financial Copilot UI & Interaction Suite', () => {
     await expect(chatInput).toHaveValue('Project my November 2026 dining burn rate');
   });
 
+  test('TC-UI-07: Notification Bell toggles popover with active ledger briefings and anomalies', async ({ page }) => {
+    const notifBtn = page.locator('button[title="Financial Notifications & Anomaly Alerts"]').first();
+    await expect(notifBtn).toBeVisible({ timeout: 10000 });
+
+    // Open notifications popover
+    await notifBtn.click();
+    const popoverTitle = page.locator('text=Ledger Alerts & Briefings');
+    await expect(popoverTitle).toBeVisible({ timeout: 5000 });
+
+    // Verify at least one briefing or anomaly is rendered
+    const briefingText = page.locator('text=/Spike|Briefing|Normal/').first();
+    await expect(briefingText).toBeVisible();
+
+    // Close notifications popover
+    await notifBtn.click();
+    await expect(popoverTitle).not.toBeVisible();
+  });
+
+  test('TC-UI-08: Quick expense card supports inline payment method editing', async ({ page }) => {
+    const chatInput = page.locator('form input[type="text"]').first();
+    await chatInput.fill('250 coffee');
+    await page.keyboard.press('Enter');
+
+    // Wait for the intent card
+    const cardAmount = page.locator('text=₹250.00').first();
+    await expect(cardAmount).toBeVisible({ timeout: 10000 });
+
+    // Click edit pencil icon
+    const editBtn = page.locator('button[title="Edit category or payment method"]').first();
+    await editBtn.click();
+
+    // Verify Category and Paid via dropdowns appear
+    const paidViaSelect = page.locator('select', { hasText: 'UPI' }).first();
+    await expect(paidViaSelect).toBeVisible();
+
+    // Change payment method to Cash
+    await paidViaSelect.selectOption('Cash');
+
+    // Click Done
+    const doneBtn = page.locator('button:text-is("Done")').first();
+    await doneBtn.click();
+
+    // Verify card summary updated to Cash
+    const cardSummary = page.locator('text=/Coffee • Cash/').first();
+    await expect(cardSummary).toBeVisible();
+  });
+
 });

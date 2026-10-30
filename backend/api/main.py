@@ -16,6 +16,7 @@ from backend.api.routes.analytics import router as analytics_router
 from backend.api.routes.transactions import router as transactions_router
 from backend.api.routes.chat import router as chat_router
 from backend.api.routes.auth import router as auth_router
+from backend.api.routes.notifications import router as notifications_router
 
 app = FastAPI(
     title="AI Expense & Accounting Platform API",
@@ -45,6 +46,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(analytics_router)
 app.include_router(transactions_router)
 app.include_router(chat_router)
+app.include_router(notifications_router)
 
 
 @app.get("/health")
