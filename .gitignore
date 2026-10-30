@@ -195,3 +195,12 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Modern Nivo Stack
+test-results/
+playwright-report/
+.deepeval/
+frontend/node_modules/
+frontend/dist/
+*.log
+.env

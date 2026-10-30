@@ -1,0 +1,17 @@
+services:
+  expense-postgres:
+    image: pgvector/pgvector:pg17
+    container_name: expense_accounting_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: expense_accounting_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
