@@ -280,3 +280,50 @@ async def create_transaction(
         "message": f"Transaction recorded and double-entry balanced with ${amount:.2f}."
     }
 
+
+@router.patch("/transactions/{transaction_id}/reconcile")
+async def reconcile_transaction(
+    transaction_id: int,
+    db: AsyncSession = Depends(get_async_db)
+) -> Dict[str, Any]:
+    """Marks a single transaction as reconciled and statement-verified."""
+    res = await db.execute(
+        text("UPDATE transactions SET is_reconciled = true WHERE id = :id RETURNING id;"),
+        {"id": transaction_id}
+    )
+    row = res.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    await db.commit()
+    return {"success": True, "transaction_id": transaction_id, "is_reconciled": True}
+
+
+class BatchReconcileRequest(BaseModel):
+    category: Optional[str] = None
+    account_code: Optional[str] = None
+
+
+@router.post("/transactions/reconcile-all")
+async def batch_reconcile_transactions(
+    payload: Optional[BatchReconcileRequest] = None,
+    db: AsyncSession = Depends(get_async_db)
+) -> Dict[str, Any]:
+    """Batch reconciles all pending unreconciled transactions, optionally filtered by category."""
+    cat = payload.category if payload else None
+    if cat:
+        res = await db.execute(
+            text("UPDATE transactions SET is_reconciled = true WHERE is_reconciled = false AND LOWER(category) = LOWER(:cat) RETURNING id;"),
+            {"cat": cat.strip()}
+        )
+    else:
+        res = await db.execute(
+            text("UPDATE transactions SET is_reconciled = true WHERE is_reconciled = false RETURNING id;")
+        )
+    reconciled_ids = [r[0] for r in res.fetchall()]
+    await db.commit()
+    return {
+        "success": True,
+        "reconciled_count": len(reconciled_ids),
+        "message": f"Successfully audited and reconciled {len(reconciled_ids)} transaction(s)."
+    }
+

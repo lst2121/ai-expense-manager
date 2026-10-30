@@ -218,11 +218,17 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const activeStreamSessionIdRef = useRef<string | null>(null);
+  const isStreamingRef = useRef(isStreaming);
+  useEffect(() => {
+    isStreamingRef.current = isStreaming;
+  }, [isStreaming]);
 
   // Restore session messages from PostgreSQL when sessionId changes
   useEffect(() => {
     if (!sessionId) {
       setThreadId(null);
+      activeStreamSessionIdRef.current = null;
       setMessages([
         {
           id: 'welcome',
@@ -236,8 +242,17 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
       return;
     }
 
+    // Guard against race conditions: If this sessionId change was triggered by our own active streaming session, do not wipe!
+    if (activeStreamSessionIdRef.current === sessionId || (isStreamingRef.current && threadId === sessionId)) {
+      setThreadId(sessionId);
+      return;
+    }
+
     setThreadId(sessionId);
     fetchSessionDetail(sessionId).then((detail) => {
+      // Do not overwrite if user started streaming while request was in flight
+      if (isStreamingRef.current && activeStreamSessionIdRef.current === sessionId) return;
+
       if (detail && detail.messages && detail.messages.length > 0) {
         const loadedMessages: Message[] = detail.messages.map((m) => {
           const insightItem = m.tool_calls?.find((t: any) => t.insight)?.insight;
@@ -258,7 +273,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           };
         });
         setMessages(loadedMessages);
-      } else {
+      } else if (!isStreamingRef.current) {
         setMessages([
           {
             id: 'welcome',
@@ -271,7 +286,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
         ]);
       }
     });
-  }, [sessionId, language]);
+  }, [sessionId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -328,6 +343,17 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
+  const handleInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData?.getData('text');
+    // If user pastes large text (> 800 characters or > 15 lines), stage as file like ChatGPT
+    if (pastedText && (pastedText.length > 800 || pastedText.split('\n').length > 15)) {
+      e.preventDefault();
+      const blob = new Blob([pastedText], { type: 'text/plain' });
+      const file = new File([blob], 'pasted_content.txt', { type: 'text/plain' });
+      setStagedFile(file);
+    }
+  };
+
   // Helper to extract [Action: <label>] chips from text
   const extractActionChips = (content: string) => {
     const matches: string[] = [];
@@ -348,6 +374,9 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     let text = content.replace(/\[Persona:\s*[^\]]+\]/gi, '').trim();
     // Strip all [Action: ...] tags, whether bare, wrapped in backticks, brackets or quotes
     text = text.replace(/`?\s*\[Action:[^\]]*\]\s*`?/gi, '').trim();
+    // Strip <financial_insight> ... </financial_insight> tags and any in-progress insight stream
+    text = text.replace(/<financial_insight>[\s\S]*?<\/financial_insight>/gi, '').trim();
+    text = text.replace(/<financial_insight>[\s\S]*$/gi, '').trim();
     // Strip doubled quotes
     text = text.replace(/""([^""]+)""/g, '"$1"');
     // Strip empty backtick spans or backticks surrounding whitespace
@@ -1031,6 +1060,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           provider,
           {
             onSession: (data) => {
+              activeStreamSessionIdRef.current = data.session_id || null;
               setThreadId(data.thread_id);
               if (data.session_id && data.session_id !== sessionId) {
                 onSessionCreated?.(data.session_id);
@@ -1097,6 +1127,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               );
             },
             onDone: () => {
+              activeStreamSessionIdRef.current = null;
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === assistantMsgId ? { ...msg, isStreaming: false } : msg
@@ -1106,6 +1137,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               onSessionUpdated?.();
             },
             onError: (err) => {
+              activeStreamSessionIdRef.current = null;
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === assistantMsgId
@@ -1221,6 +1253,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
         provider,
         {
           onSession: (data) => {
+            activeStreamSessionIdRef.current = data.session_id || null;
             setThreadId(data.thread_id);
             if (data.session_id && data.session_id !== sessionId) {
               onSessionCreated?.(data.session_id);
@@ -1289,6 +1322,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             );
           },
           onDone: () => {
+            activeStreamSessionIdRef.current = null;
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === assistantMsgId ? { ...msg, isStreaming: false } : msg
@@ -1298,6 +1332,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             onSessionUpdated?.();
           },
           onError: (err) => {
+            activeStreamSessionIdRef.current = null;
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === assistantMsgId
@@ -2070,11 +2105,12 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                     ? 'उत्तर आ रहा है... (अपना अगला प्रश्न यहाँ लिखें)'
                     : 'AI is streaming... (Type your next question)'
                   : language === 'hi'
-                  ? "पूछें जैसे '2026 का खर्च प्रोजेक्ट करो', '3500 pizza', या बैंक SMS पेस्ट करें..."
-                  : "Ask a question, paste bank SMS, or type e.g. '3500 pizza'..."
+                  ? "पूछें जैसे '2026 का खर्च प्रोजेक्ट करो', '3500 pizza', या कोई संदेश पेस्ट करें..."
+                  : "Ask a question, paste your message, or type e.g. '3500 pizza'..."
               }
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onPaste={handleInputPaste}
               className="flex-1 bg-transparent px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
             />
             <button

@@ -97,7 +97,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({
           <div>
             <h3 className="text-base font-bold text-white">Smart Expense Ingestion</h3>
             <p className="text-xs text-slate-400">
-              Auto-extract expenses from Bank SMS, UPI alerts, or receipts
+              Auto-extract expenses from messages, payment alerts, or receipts
             </p>
           </div>
         </div>

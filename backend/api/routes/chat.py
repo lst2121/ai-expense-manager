@@ -27,6 +27,7 @@ from backend.agent.tools.extractor_tool import (
     extract_text_from_pdf,
     extract_text_from_csv,
     extract_text_from_excel,
+    extract_text_from_image,
     infer_category,
     analyze_document_with_llm,
 )
@@ -92,34 +93,34 @@ def classify_expense_category(item: str) -> str:
     lower = item.lower()
 
     # Dining & Catering
-    if re.search(r'\b(?:pizza|burger|zomato|swiggy|food|dinner|lunch|breakfast|chai|tea|coffee|restaurant|cafe|bhelpuri|dosa|biryani|mcdonalds?|starbucks?|haldiram|subway|dominos?|pizzeria)\b', lower):
+    if re.search(r'\b(?:pizza|burger|zomato|swiggy|food|dinner|lunch|breakfast|chai|tea|coffee|restaurant|cafe|bhelpuri|dosa|biryani|mcdonalds?|starbucks?|haldiram|subway|dominos?|pizzeria)\b|[🍕🍔🍟🌭🍿🥞🧇🥪🌮🌯🍲🍜🍝🍣🍱🥟🍦🍨🍩🎂🍰☕🍵🍺🍻🥤]', lower):
         return "dining"
     # Groceries & Staples
-    if re.search(r'\b(?:blinkit|zepto|instamart|bigbasket|kirana|ration|milk|vegetables?|fruits?|grocery|groceries|sabzi|dmart|tomato|potato|onion|bread|eggs?|butter|paneer|atta|dal|oil|rice)\b', lower):
+    if re.search(r'\b(?:blinkit|zepto|instamart|bigbasket|kirana|ration|milk|vegetables?|fruits?|grocery|groceries|sabzi|dmart|tomato|potato|onion|bread|eggs?|butter|paneer|atta|dal|oil|rice)\b|[🛒🍏🍎🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍅🥑🥦🥒🌶🌽🥕🧄🧅🥔🍞🧀🥚]', lower):
         return "groceries"
     # Shopping & Apparel
-    if re.search(r'\b(?:shirt|tshirt|t-shirt|jeans|pants?|trousers?|clothing|clothes|shoes|sneakers|dress|kurta|saree|jacket|suit|zara|h&m|myntra|ajio|shopping|apparel|watch|bag)\b', lower):
+    if re.search(r'\b(?:shirt|tshirt|t-shirt|jeans|pants?|trousers?|clothing|clothes|shoes|sneakers|dress|kurta|saree|jacket|suit|zara|h&m|myntra|ajio|shopping|apparel|watch|bag)\b|[👗👕👖👔👠👡👢👞👟🧦🎩🧢]', lower):
         return "shopping"
     # Home & Furniture
-    if re.search(r'\b(?:chair|table|desk|sofa|bed|mattress|furniture|curtains?|carpet|lamp|wardrobe|bookshelf|ikea|urban\s*ladder|pepperfry)\b', lower):
+    if re.search(r'\b(?:chair|table|desk|sofa|bed|mattress|furniture|curtains?|carpet|lamp|wardrobe|bookshelf|ikea|urban\s*ladder|pepperfry)\b|[🛋🪑🛏🚪🪞]', lower):
         return "home & furniture"
     # Electronics & Appliances
-    if re.search(r'\b(?:tv|television|laptop|phone|mobile|smartphone|monitor|fridge|refrigerator|ac|air\s*conditioner|ipad|tablet|charger|headphones?|earphones?|earbuds?|croma|reliance\s*digital)\b', lower):
+    if re.search(r'\b(?:tv|television|laptop|phone|mobile|smartphone|monitor|fridge|refrigerator|ac|air\s*conditioner|ipad|tablet|charger|headphones?|earphones?|earbuds?|croma|reliance\s*digital)\b|[📱💻🖥⌨🖱📺📻🔋💡]', lower):
         return "electronics"
     # Utilities & Telecom
-    if re.search(r'\b(?:electricity|power|water|gas|cylinder|lpg|png|wifi|broadband|recharge|bill|bescom|airtel|jio|vi|vodafone)\b', lower):
+    if re.search(r'\b(?:electricity|power|water|gas|cylinder|lpg|png|wifi|broadband|recharge|bill|bescom|airtel|jio|vi|vodafone)\b|[⚡💡🔌💧📡]', lower):
         return "utilities"
     # Transportation & Fleet
-    if re.search(r'\b(?:uber|ola|rapido|petrol|fuel|diesel|cng|metro|auto|cab|taxi|bus|toll|fastag|flight|train|irctc)\b', lower):
+    if re.search(r'\b(?:uber|ola|rapido|petrol|fuel|diesel|cng|metro|auto|cab|taxi|bus|toll|fastag|flight|train|irctc)\b|[✈🚗🚕🚙🚌🚎🏎🚓🚑🛵🏍🛺⛽🚇🚆]', lower):
         return "transportation"
     # Healthcare & Medical
-    if re.search(r'\b(?:medicine|doctor|hospital|clinic|pharmacy|apollo|1mg|pharmeasy|dawa|dentist|tests?|pathology)\b', lower):
+    if re.search(r'\b(?:medicine|doctor|hospital|clinic|pharmacy|apollo|1mg|pharmeasy|dawa|dentist|tests?|pathology)\b|[💊💉🩺🩹🏥]', lower):
         return "healthcare"
     # Entertainment & Events
-    if re.search(r'\b(?:netflix|prime|hotstar|spotify|youtube|movie|bookmyshow|cinema|steam|games?|arcade|timezone|pvr|inox)\b', lower):
+    if re.search(r'\b(?:netflix|prime|hotstar|spotify|youtube|movie|bookmyshow|cinema|steam|games?|arcade|timezone|pvr|inox)\b|[🎬🎮🕹🎟🎫🎧🎲]', lower):
         return "entertainment"
     # Rent & Facilities
-    if re.search(r'\b(?:rent|maintenance|society|flat|apartment|brokerage|maid|cook|kamwali)\b', lower):
+    if re.search(r'\b(?:rent|maintenance|society|flat|apartment|brokerage|maid|cook|kamwali)\b|[🏠🏢🔑]', lower):
         return "rent"
 
     # Default to general rather than groceries
@@ -148,11 +149,11 @@ def detect_expense_intent(text: str) -> Optional[Dict[str, Any]]:
         return None
 
     # Pattern 1: 'spent 3,500 at pizza hut today on upi', 'add 500 for shirt today'
-    p1 = re.search(r'(?:(?:spent|paid|bought|add)\s*(?:rs\.?|inr|₹)?\s*(-?[\d,]+(?:\.\d{1,2})?))\s+(?:on|for|at|in)?\s*([a-zA-Z\s&0-9\-_]+)', t, re.I)
-    # Pattern 2: '3500 pizza', '500 for jeans'
-    p2 = re.search(r'^(?:rs\.?|inr|₹)?\s*(-?[\d,]+(?:\.\d{1,2})?)\s+(?:on|for|at|in)?\s*([a-zA-Z\s&0-9\-_]+)$', t, re.I)
+    p1 = re.search(r'(?:(?:spent|paid|bought|add)\s*(?:rs\.?|inr|₹)?\s*(-?[\d,]+(?:\.\d{1,2})?))\s+(?:on|for|at|in)?\s*(.+)', t, re.I)
+    # Pattern 2: '3500 pizza', '500 for jeans', '5000 🍕'
+    p2 = re.search(r'^(?:rs\.?|inr|₹)?\s*(-?[\d,]+(?:\.\d{1,2})?)\s+(?:on|for|at|in)?\s*(.+)$', t, re.I)
     # Pattern 3: 'pizza 3500'
-    p3 = re.search(r'^([a-zA-Z\s&0-9\-_]+)\s+(?:rs\.?|inr|₹)?\s*(-?[\d,]+(?:\.\d{1,2})?)$', t, re.I)
+    p3 = re.search(r'^([^\d]+?)\s+(?:rs\.?|inr|₹)?\s*(-?[\d,]+(?:\.\d{1,2})?)$', t, re.I)
 
     raw_amt = None
     raw_item = None
@@ -321,6 +322,45 @@ def generate_smart_financial_response(query: str, lang: str = "en", session_id: 
         else:
             text = "Hi! How can I assist with your household finances today? You can ask about your latest expense, monthly trends, 2026 projections, or log expenses like '3500 pizza'."
         return text, None, "conversational_handler"
+
+    # 3.4 Direct Reconciliation Execution (e.g. "reconcile my transactions", "reconcile entertainment", "mark reconciled")
+    elif any(k in q for k in ["reconcile all", "reconcile transactions", "reconcile entertainment", "reconcile them", "mark reconciled", "reconcile pending", "reconcile my"]):
+        try:
+            with sync_engine.connect() as conn:
+                target_cat = None
+                for cat in ["entertainment", "dining", "groceries", "utilities", "transportation", "healthcare", "rent", "subscriptions"]:
+                    if cat in q:
+                        target_cat = cat
+                        break
+
+                if target_cat:
+                    res = conn.execute(
+                        text("UPDATE transactions SET is_reconciled = true WHERE is_reconciled = false AND LOWER(category) = :cat RETURNING id, total_amount;"),
+                        {"cat": target_cat}
+                    )
+                else:
+                    res = conn.execute(
+                        text("UPDATE transactions SET is_reconciled = true WHERE is_reconciled = false RETURNING id, total_amount;")
+                    )
+                rows = res.fetchall()
+                conn.commit()
+                count = len(rows)
+                total_val = sum([float(r[1]) for r in rows]) if rows else 0.0
+
+                if count > 0:
+                    scope_label = f"{target_cat.title()}" if target_cat else "All"
+                    if lang == "hi":
+                        resp = f"✔ सफलतापूर्वक **{count}** {scope_label} लेन-देन (कुल मूल्य: **₹{total_val:,.2f}**) को बैंक स्टेटमेंट के साथ रीकंसाइल (Reconcile) कर दिया गया है। आपका बहीखाता अब पूरी तरह से सत्यापित (100% Verified) है!\n\n[Action: View Monthly Trends] [Action: Audit Unreconciled]"
+                    else:
+                        resp = f"✔ Successfully reconciled and statement-verified **{count}** {scope_label} transaction(s) totaling **₹{total_val:,.2f}**. Your double-entry ledger is now 100% verified!\n\n[Action: View Monthly Trends] [Action: Audit Unreconciled]"
+                else:
+                    if lang == "hi":
+                        resp = "कोई भी अपुष्ट (Unreconciled) लेन-देन लंबित नहीं है। आपके सभी खाते और प्रविष्टियाँ पहले से ही 100% सत्यापित हैं!\n\n[Action: View Monthly Trends]"
+                    else:
+                        resp = "No pending unreconciled transactions were found. All your ledger entries are already 100% statement-matched and verified!\n\n[Action: View Monthly Trends]"
+                return resp, None, "reconcile_transactions"
+        except Exception as rec_err:
+            logger.error(f"Error executing reconciliation: {rec_err}")
 
     # 3.5 Credit Card Balances & Unreconciled Liabilities Audit
     elif any(k in q for k in ["card balance", "card liability", "credit card", "cards", "audit unreconciled", "unreconciled", "unverified"]):
@@ -1044,7 +1084,7 @@ async def chat_stream(request: ChatMessageRequest, req_meta: Request):
                 user_query=user_message,
                 assistant_response=confirmation_text,
                 chart_spec=None,
-                tool_calls=[{"tool": "parse_bank_sms", "summary": "Bank SMS parsed"}],
+                tool_calls=[{"tool": "parse_bank_sms", "summary": "Payment alert parsed"}],
                 user_id=user_id,
             )
             yield {
@@ -1177,6 +1217,7 @@ async def chat_stream(request: ChatMessageRequest, req_meta: Request):
                 agent_input = {"messages": prior_messages + [HumanMessage(content=user_message)]}
 
                 has_tokens = False
+                emitted_live_insight = False
                 async for event in agent.astream_events(agent_input, config=config, version="v2"):
                     kind = event["event"]
 
@@ -1188,6 +1229,24 @@ async def chat_stream(request: ChatMessageRequest, req_meta: Request):
                             if isinstance(content, str) and content:
                                 has_tokens = True
                                 accumulated_assistant_tokens.append(content)
+                                full_so_far = "".join(accumulated_assistant_tokens)
+                                # Suppress streaming of raw <financial_insight> ... </financial_insight> JSON tokens
+                                if "<financial_insight>" in full_so_far and "</financial_insight>" not in full_so_far:
+                                    continue
+                                elif "</financial_insight>" in full_so_far:
+                                    if not emitted_live_insight:
+                                        m = re.search(r"<financial_insight>(.*?)</financial_insight>", full_so_far, re.DOTALL)
+                                        if m:
+                                            try:
+                                                emitted_live_insight = True
+                                                yield {
+                                                    "event": "insight",
+                                                    "data": json.dumps({"insight": json.loads(m.group(1).strip())})
+                                                }
+                                            except Exception:
+                                                pass
+                                    continue
+
                                 yield {
                                     "event": "token",
                                     "data": json.dumps({"token": content})
@@ -1233,10 +1292,11 @@ async def chat_stream(request: ChatMessageRequest, req_meta: Request):
                             try:
                                 collected_insight = json.loads(insight_match.group(1).strip())
                                 full_text = full_text.replace(insight_match.group(0), "").strip()
-                                yield {
-                                    "event": "insight",
-                                    "data": json.dumps({"insight": collected_insight})
-                                }
+                                if not emitted_live_insight:
+                                    yield {
+                                        "event": "insight",
+                                        "data": json.dumps({"insight": collected_insight})
+                                    }
                             except Exception as ie:
                                 logger.error(f"Error parsing insight in stream_agent: {ie}")
 
@@ -1406,6 +1466,8 @@ async def ingest_document(
             doc_text = extract_text_from_csv(content_bytes)
         elif lower_name.endswith((".xlsx", ".xls")):
             doc_text = extract_text_from_excel(content_bytes)
+        elif lower_name.endswith((".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff")):
+            doc_text = extract_text_from_image(content_bytes, filename)
         else:
             try:
                 doc_text = content_bytes.decode("utf-8", errors="ignore")

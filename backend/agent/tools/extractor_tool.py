@@ -213,6 +213,60 @@ def extract_text_from_excel(excel_bytes: bytes) -> str:
         return f"Excel Extraction Error: {str(e)}"
 
 
+def extract_text_from_image(image_bytes: bytes, filename: str = "receipt.jpg") -> str:
+    """
+    Extracts text, metadata, tabular results, and financial figures from an image
+    using Google Gemini Vision (gemini-3.8-flash) with local pre-processing and resizing.
+    """
+    try:
+        from PIL import Image
+        import io
+        import os
+        from google import genai
+        from google.genai import types
+
+        # Open and pre-process image with Pillow
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            # Resize image to reasonable bounds to preserve high OCR clarity while avoiding network timeouts
+            img.thumbnail((1600, 1600))
+            buf = io.BytesIO()
+            img.convert("RGB").save(buf, format="JPEG", quality=85)
+            processed_bytes = buf.getvalue()
+
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            return f"Image '{filename}' uploaded ({len(image_bytes)} bytes), but GEMINI_API_KEY is not configured for vision OCR."
+
+        client = genai.Client(api_key=api_key)
+        prompt = (
+            "You are an expert document OCR and financial/clinical analysis system. "
+            "Examine this document image carefully and transcribe all legible content faithfully:\n"
+            "- Facility / Merchant / Organization Name & Contact details\n"
+            "- Document Type (Invoice, Bill, Lab Report, Receipt, Policy, ID, etc.)\n"
+            "- Patient / Customer / Client Details (Name, ID, Age/Gender, etc.)\n"
+            "- Invoice / Reference / Account / Bill Numbers\n"
+            "- Dates & Timestamps (Invoice date, sample date, transaction date, print date)\n"
+            "- All line items, test names, results, reference ranges, units, and methodologies\n"
+            "- Any monetary amounts (Subtotal, Tax/GST/VAT, Total Paid, Balance Due, Insured status)\n"
+            "- Signatures, doctor/technologist names, licenses, and accreditation marks\n\n"
+            "Format the output clearly using structured Markdown tables and bullet points."
+        )
+
+        response = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=[
+                types.Part.from_bytes(data=processed_bytes, mime_type="image/jpeg"),
+                prompt
+            ]
+        )
+        if response and response.text:
+            return response.text.strip()
+        return f"Image '{filename}' processed, but no legible text was recognized."
+    except Exception as e:
+        logger.error(f"Image vision extraction error: {e}")
+        return f"Image Extraction Error ({filename}): {str(e)}"
+
+
 async def analyze_document_with_llm(
     text_content: str,
     filename: str,
@@ -255,15 +309,16 @@ async def analyze_document_with_llm(
     truncated_text = text_content[:4000]
 
     system_prompt = (
-        "You are an expert financial auditor and document classifier. "
+        "You are an expert document classifier and financial auditor. "
         "Analyze the provided document text and determine whether it is a financial document "
-        "(such as a bank statement, tax invoice, purchase receipt, or bill) OR a non-financial informational document "
-        "(such as HR guidelines, immigration/visa FAQs, company policies, or articles).\n\n"
+        "(such as a bank statement, tax invoice with payable amount, purchase receipt, or utility bill) "
+        "OR a non-financial or clinical/informational document (such as a medical laboratory report, pathology test results, "
+        "academic marksheet/certificate, HR policy, employee exit guidelines, or legal contract).\n\n"
         "STRICT EXTRACTION RULES:\n"
-        "1. If the document is NOT a financial record (e.g. FAQs, guidelines, contracts without bills), "
-        "set 'is_financial': false, 'document_type': 'non_financial_document', 'transactions': [], and provide a clear 2-sentence summary of what the document explains.\n"
+        "1. If the document is NOT a financial expense or payable bill (e.g. medical lab report, pathology test results, academic marksheet, HR guidelines, or insured test with no patient liability), "
+        "set 'is_financial': false, 'document_type': 'non_financial_document', 'transactions': [], and provide an accurate 2-3 sentence executive summary explaining exactly what the document is, person/patient/student name, facility/institution name, test names and key results or findings, and document/invoice reference numbers.\n"
         "2. NEVER invent or fabricate transactions for non-financial documents.\n"
-        "3. If it IS a receipt or invoice, extract the vendor, date (YYYY-MM-DD), total_amount (float in INR), category, and payment_method.\n"
+        "3. If it IS a receipt or invoice with actual payable amounts, extract the vendor, date (YYYY-MM-DD), total_amount (float in INR), category, and payment_method.\n"
         "4. If it IS a bank statement with multiple debit/credit rows, extract up to 10 prominent rows into 'transactions'.\n"
         "Respond ONLY with a valid JSON object matching this schema:\n"
         "{\n"
