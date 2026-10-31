@@ -147,14 +147,9 @@ async def get_me(user: Optional[dict] = Depends(get_current_user_optional)):
     Returns current authenticated user profile.
     """
     if not user:
-        # Default fallback to Lokender Singh for seamless development experience
         return {
             "authenticated": False,
-            "user": {
-                "id": "usr-lokender-2026",
-                "email": "lokender@wealthcopilot.ai",
-                "full_name": "Lokender Singh",
-            }
+            "user": None
         }
 
     return {

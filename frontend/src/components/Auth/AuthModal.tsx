@@ -8,8 +8,9 @@ interface AuthModalProps {
     id: string;
     email: string;
     full_name: string;
-  };
+  } | null;
   onLoginSuccess: (user: { id: string; email: string; full_name: string }, token: string) => void;
+  onSignOut: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -17,13 +18,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   currentUser,
   onLoginSuccess,
+  onSignOut,
 }) => {
-  const [tab, setTab] = useState<'profile' | 'login' | 'register'>('profile');
+  const [tab, setTab] = useState<'profile' | 'login' | 'register'>(currentUser ? 'profile' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (!currentUser && tab === 'profile') {
+      setTab('login');
+    }
+  }, [currentUser, tab]);
 
   if (!isOpen) return null;
 
@@ -36,6 +44,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       });
       const data = await res.json();
       if (data.status === 'success') {
+        localStorage.removeItem('nivo_signed_out');
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('nivo_auth_token', data.token);
         localStorage.setItem('nivo_user', JSON.stringify(data.user));
@@ -70,6 +79,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
+        localStorage.removeItem('nivo_signed_out');
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('nivo_auth_token', data.token);
         localStorage.setItem('nivo_user', JSON.stringify(data.user));
@@ -105,6 +115,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
+        localStorage.removeItem('nivo_signed_out');
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('nivo_auth_token', data.token);
         localStorage.setItem('nivo_user', JSON.stringify(data.user));
@@ -124,13 +135,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     localStorage.removeItem('auth_token');
     localStorage.removeItem('nivo_auth_token');
     localStorage.removeItem('nivo_user');
-    const defaultUser = {
-      id: 'usr-lokender-2026',
-      email: 'lokender@nivo.ai',
-      full_name: 'Lokender Singh',
-    };
-    onLoginSuccess(defaultUser, '');
-    onClose();
+    localStorage.setItem('nivo_signed_out', 'true');
+    onSignOut();
+    setTab('login');
   };
 
   return (
@@ -156,18 +163,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Tab Switcher */}
-        <div className="grid grid-cols-3 gap-1 p-1 my-4 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+        <div className={`grid ${currentUser ? 'grid-cols-3' : 'grid-cols-2'} gap-1 p-1 my-4 rounded-xl bg-slate-950 border border-slate-800 text-xs`}>
+          {currentUser && (
+            <button
+              type="button"
+              onClick={() => { setTab('profile'); setError(null); }}
+              className={`py-1.5 rounded-lg font-medium transition ${
+                tab === 'profile'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Account
+            </button>
+          )}
           <button
-            onClick={() => { setTab('profile'); setError(null); }}
-            className={`py-1.5 rounded-lg font-medium transition ${
-              tab === 'profile'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Account
-          </button>
-          <button
+            type="button"
             onClick={() => { setTab('login'); setError(null); }}
             className={`py-1.5 rounded-lg font-medium transition ${
               tab === 'login'
@@ -178,6 +189,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             Sign In
           </button>
           <button
+            type="button"
             onClick={() => { setTab('register'); setError(null); }}
             className={`py-1.5 rounded-lg font-medium transition ${
               tab === 'register'
@@ -195,7 +207,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
-        {tab === 'profile' && (
+        {tab === 'profile' && currentUser && (
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-sm font-bold text-emerald-400">
@@ -240,6 +252,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={handleSignOut}
+                data-testid="auth-modal-signout-btn"
                 className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-rose-950/40 hover:border-rose-500/30 border border-slate-700 text-slate-300 hover:text-rose-300 text-xs font-medium flex items-center gap-1.5 transition"
                 title="Sign Out"
               >
@@ -286,6 +299,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             >
               <LogIn className="w-4 h-4" />
               <span>{loading ? 'Authenticating...' : 'Sign In to Ledger'}</span>
+            </button>
+
+            <div className="relative my-3">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-800" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase">
+                <span className="bg-slate-900 px-2 text-slate-500 font-medium">Quick Demo Access</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="w-full py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 hover:text-white text-xs font-medium flex items-center justify-center gap-2 transition disabled:opacity-50"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Demo (Lokender)</span>
             </button>
           </form>
         )}

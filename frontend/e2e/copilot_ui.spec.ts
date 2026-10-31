@@ -227,4 +227,33 @@ test.describe('Executive Financial Copilot UI & Interaction Suite', () => {
     await expect(cardSummary).toBeVisible();
   });
 
+  test('TC-UI-09: User can sign out directly via sidebar or auth modal and log back in', async ({ page }) => {
+    // 1. Verify user profile card is visible in sidebar footer
+    const profileCard = page.locator('text=Lokender Singh').first();
+    await expect(profileCard).toBeVisible({ timeout: 5000 });
+
+    // 2. Click the direct Sign Out button in sidebar
+    const signOutBtn = page.locator('button[data-testid="sidebar-signout-btn"]').first();
+    await expect(signOutBtn).toBeVisible();
+    await signOutBtn.click();
+
+    // 3. Verify user is now signed out and sidebar shows Sign In / Login
+    const signInBtn = page.locator('button[data-testid="sidebar-signin-btn"]').first();
+    await expect(signInBtn).toBeVisible({ timeout: 5000 });
+    await expect(profileCard).not.toBeVisible();
+
+    // 4. Click Sign In to open AuthModal
+    await signInBtn.click();
+    const authModalHeader = page.locator('text=Account & Ledger Access').first();
+    await expect(authModalHeader).toBeVisible();
+
+    // 5. Test 1-click Demo Login back to Lokender
+    const demoBtn = page.locator('button:has-text("Demo (Lokender)")').first();
+    await expect(demoBtn).toBeVisible();
+    await demoBtn.click();
+
+    // 6. Verify profile is restored
+    await expect(profileCard).toBeVisible({ timeout: 5000 });
+  });
+
 });

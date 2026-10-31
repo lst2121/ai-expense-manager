@@ -13,6 +13,8 @@ import {
   Building,
   PanelLeftClose,
   PanelLeft,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import type { ChatSessionItem } from '../../services/api';
 
@@ -29,8 +31,9 @@ interface ChatSidebarProps {
   onOpenSettings: () => void;
   onQuickAction: (prompt: string) => void;
   provider: 'deepseek' | 'gemini';
-  currentUser?: { id: string; email: string; full_name: string };
+  currentUser?: { id: string; email: string; full_name: string } | null;
   onOpenAuth?: () => void;
+  onSignOut?: () => void;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
@@ -46,8 +49,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onOpenSettings,
   onQuickAction,
   provider: _provider,
-  currentUser = { id: 'usr-lokender-2026', email: 'lokender@nivo.ai', full_name: 'Lokender Singh' },
+  currentUser = null,
   onOpenAuth,
+  onSignOut,
 }) => {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -329,37 +333,75 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
       {/* Bottom User Profile & Settings */}
       <div className="p-3 border-t border-slate-900 bg-slate-950/60">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/60 border border-slate-800/60">
-          <div
-            onClick={onOpenAuth}
-            className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition flex-1 min-w-0"
-            title="Click to manage account / switch ledger"
-          >
-            <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-300 flex-shrink-0">
-              {currentUser.full_name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase()}
-            </div>
-            <div className="truncate">
-              <p className="text-xs font-semibold text-slate-200 truncate">{currentUser.full_name}</p>
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span>Household Ledger • Active</span>
+        {currentUser ? (
+          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/60 border border-slate-800/60 gap-1.5">
+            <div
+              onClick={onOpenAuth}
+              className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition flex-1 min-w-0"
+              title="Click to manage account / profile"
+            >
+              <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-300 flex-shrink-0">
+                {currentUser.full_name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </div>
+              <div className="truncate">
+                <p className="text-xs font-semibold text-slate-200 truncate">{currentUser.full_name}</p>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>Household Ledger • Active</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <button
-            onClick={onOpenSettings}
-            title="Copilot Settings"
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition flex-shrink-0"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-        </div>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button
+                onClick={onOpenSettings}
+                title="Copilot Settings"
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <button
+                onClick={onSignOut}
+                title="Sign Out"
+                data-testid="sidebar-signout-btn"
+                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/60 border border-slate-800/60 gap-2">
+            <div
+              onClick={onOpenAuth}
+              className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition flex-1 min-w-0"
+              title="Click to sign in"
+            >
+              <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-400 flex-shrink-0">
+                <LogIn className="w-4 h-4 text-indigo-400" />
+              </div>
+              <div className="truncate">
+                <p className="text-xs font-semibold text-slate-200">Sign In</p>
+                <p className="text-[10px] text-slate-400">Private ledger access</p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenAuth}
+              title="Sign In"
+              data-testid="sidebar-signin-btn"
+              className="px-2.5 py-1 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-lg transition flex items-center gap-1"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Login</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

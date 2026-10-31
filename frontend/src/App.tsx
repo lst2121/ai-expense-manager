@@ -17,7 +17,9 @@ export function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(() => {
+  const [currentUser, setCurrentUser] = useState<{ id: string; email: string; full_name: string } | null>(() => {
+    const isSignedOut = localStorage.getItem('nivo_signed_out') === 'true';
+    if (isSignedOut) return null;
     const saved = localStorage.getItem('nivo_user');
     if (saved) {
       try {
@@ -50,8 +52,36 @@ export function App() {
     }
   };
 
+  const handleSignOut = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('nivo_auth_token');
+    localStorage.removeItem('nivo_user');
+    localStorage.setItem('nivo_signed_out', 'true');
+    setCurrentUser(null);
+    setActiveSessionId(null);
+    setSessions([]);
+  };
+
+  const handleLoginSuccess = (user: { id: string; email: string; full_name: string }, token: string) => {
+    localStorage.removeItem('nivo_signed_out');
+    setCurrentUser(user);
+    localStorage.setItem('nivo_user', JSON.stringify(user));
+    if (token) {
+      localStorage.setItem('nivo_auth_token', token);
+      localStorage.setItem('auth_token', token);
+    }
+    setActiveSessionId(null);
+    loadSessions();
+  };
+
   useEffect(() => {
     const verifyAuth = async () => {
+      const isSignedOut = localStorage.getItem('nivo_signed_out') === 'true';
+      const token = localStorage.getItem('nivo_auth_token') || localStorage.getItem('auth_token');
+      if (isSignedOut && !token) {
+        setCurrentUser(null);
+        return;
+      }
       try {
         const res = await fetch('/api/auth/me', {
           headers: getAuthHeaders(),
@@ -61,6 +91,9 @@ export function App() {
           if (data.authenticated && data.user) {
             setCurrentUser(data.user);
             localStorage.setItem('nivo_user', JSON.stringify(data.user));
+            localStorage.removeItem('nivo_signed_out');
+          } else if (isSignedOut) {
+            setCurrentUser(null);
           }
         }
       } catch (e) {}
@@ -122,6 +155,7 @@ export function App() {
         provider={provider}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Full-Screen Generative Conversational Canvas */}
@@ -160,12 +194,8 @@ export function App() {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         currentUser={currentUser}
-        onLoginSuccess={(user) => {
-          setCurrentUser(user);
-          localStorage.setItem('nivo_user', JSON.stringify(user));
-          setActiveSessionId(null);
-          loadSessions();
-        }}
+        onLoginSuccess={handleLoginSuccess}
+        onSignOut={handleSignOut}
       />
     </div>
   );

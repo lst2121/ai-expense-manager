@@ -93,7 +93,8 @@ export interface AppNotification {
 export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
   const token = localStorage.getItem('auth_token') || localStorage.getItem('nivo_auth_token');
   const userStr = localStorage.getItem('nivo_user');
-  let userId = 'usr-lokender-2026';
+  const isSignedOut = localStorage.getItem('nivo_signed_out') === 'true';
+  let userId = isSignedOut ? 'guest' : 'usr-lokender-2026';
   if (userStr) {
     try {
       const u = JSON.parse(userStr);
