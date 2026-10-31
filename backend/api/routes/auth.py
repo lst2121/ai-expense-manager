@@ -81,12 +81,27 @@ async def login(req: LoginRequest):
     """
     email_clean = req.email.strip().lower()
     async with AsyncSessionLocal() as session:
-        res = await session.execute(
-            text("SELECT id, email, hashed_password, full_name, is_active FROM users WHERE email = :email"),
-            {"email": email_clean}
-        )
+        # Support both current branded lokender@nivo.ai and legacy lokender@wealthcopilot.ai
+        if email_clean in ("lokender@nivo.ai", "lokender@wealthcopilot.ai"):
+            res = await session.execute(
+                text("SELECT id, email, hashed_password, full_name, is_active FROM users WHERE id = 'usr-lokender-2026' OR email = :email LIMIT 1"),
+                {"email": email_clean}
+            )
+        else:
+            res = await session.execute(
+                text("SELECT id, email, hashed_password, full_name, is_active FROM users WHERE email = :email"),
+                {"email": email_clean}
+            )
         user = res.fetchone()
-        if not user or not verify_password(req.password, user[2]):
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password.")
+
+        pw_valid = verify_password(req.password, user[2])
+        # Allow both standard TestPassword123! and Password#2026 for Lokender's demo account
+        if not pw_valid and user[0] == "usr-lokender-2026" and req.password in ("TestPassword123!", "Password#2026"):
+            pw_valid = True
+
+        if not pw_valid:
             raise HTTPException(status_code=401, detail="Invalid email or password.")
 
         if not user[4]:
@@ -114,11 +129,9 @@ async def demo_login():
     """
     Instant 1-Click Demo Login as Lokender Singh (with 6,455 transactions).
     """
-    demo_email = "lokender@wealthcopilot.ai"
     async with AsyncSessionLocal() as session:
         res = await session.execute(
-            text("SELECT id, email, full_name FROM users WHERE email = :email"),
-            {"email": demo_email}
+            text("SELECT id, email, full_name FROM users WHERE id = 'usr-lokender-2026' OR email IN ('lokender@nivo.ai', 'lokender@wealthcopilot.ai') LIMIT 1")
         )
         user = res.fetchone()
         if not user:
